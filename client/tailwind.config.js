@@ -6,11 +6,13 @@ export default {
     extend: {
       colors: {
         primary: '#8B4513',
-        whiteBg: '#F5F5F5',
-        secondary: '#C47B47',
+        whiteBg: '#FAFAFA',
         black: '#2E2E2E',
         hover: '#A95A3C',
-        grayme: '#757474'
+        lightGray: '#E0E0E0',
+        mediumGray: '#A9A9A9',
+        darkGray: '#757575'
+
       },
       fontFamily:{
         sans: ['Poppins', 'sans-serif'],
