@@ -1,7 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}"],
+    "./src/**/*.{js,ts,jsx,tsx}",
+    "./node_modules/flowbite/**/*.js"
+  ],
   theme: {
     extend: {
       colors: {
@@ -11,7 +13,9 @@ export default {
         hover: '#A95A3C',
         lightGray: '#E0E0E0',
         mediumGray: '#A9A9A9',
-        darkGray: '#757575'
+        darkGray: '#757575',
+        hoverColor: '#FBF6F2',
+        
 
       },
       fontFamily:{
@@ -19,6 +23,6 @@ export default {
       }
     },
   },
-  plugins: [],
+  plugins: [require('flowbite/plugin')],
 }
 

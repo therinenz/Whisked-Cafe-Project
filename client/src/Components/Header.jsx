@@ -2,7 +2,7 @@ import React from 'react'
 
 const Header = ({ title, subheading }) => {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 pl-8  border-b bg-whiteBg">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-2 pl-8  border-b bg-whiteBg">
       {/* Title and Subheading */}
       <div>
         <h1 className="text-lg font-bold text-primary">{title}</h1>

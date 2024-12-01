@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { X, Upload, Plus } from "lucide-react";
+import { Upload, Plus, X } from "lucide-react";
+import InputField from "./InputField";
+import Dropdown from "./Dropdown";
+import Modal from "./Modal";
 
 const AddProductModal = ({ isOpen, onClose, onAdd, existingProducts }) => {
   const [productName, setProductName] = useState("");
@@ -37,32 +40,7 @@ const AddProductModal = ({ isOpen, onClose, onAdd, existingProducts }) => {
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result); // Set preview for the UI
       reader.readAsDataURL(file);
-    }
-  };
-
-  // Handle input or drag-and-drop for image
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    handleImageUpload(file);
-  };
-
-  const handleDragDrop = (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    handleImageUpload(file);
-  };
-
-  const addIngredient = () => {
-    setIngredients([
-      ...ingredients,
-      { id: Date.now().toString(), name: "", quantity: "", unit: "" },
-    ]);
-  };
-
-  const removeIngredient = (index) => {
-    if (ingredients.length > 1) {
-      setIngredients(ingredients.filter((_, i) => i !== index));
-    }
+    } 
   };
 
   const handleSubmit = (e) => {
@@ -79,7 +57,7 @@ const AddProductModal = ({ isOpen, onClose, onAdd, existingProducts }) => {
       productId,
       category,
       price,
-      image: imagePreview, // Use the preview URL as a placeholder
+      image: imagePreview,
       ingredients,
     };
     onAdd(newProduct);
@@ -96,189 +74,190 @@ const AddProductModal = ({ isOpen, onClose, onAdd, existingProducts }) => {
     setIngredients([{ id: Date.now().toString(), name: "", quantity: "", unit: "" }]);
   };
 
-  if (!isOpen) return null;
+  const addIngredient = () => {
+    setIngredients([
+      ...ingredients,
+      { id: Date.now().toString(), name: "", quantity: "", unit: "" },
+    ]);
+  };
+
+  const removeIngredient = (index) => {
+    if (ingredients.length > 1) {
+      setIngredients(ingredients.filter((_, i) => i !== index));
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-4xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold flex items-center">
-            <Plus className="h-5 w-5 mr-2" /> Add Product
-          </h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full">
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Product Name</label>
-              <input
+    <Modal isOpen={isOpen} title={<><Plus className="h-5 w-5 mr-2 text-primary" /> Add Product</>} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Grid Layout for Product Details */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="col-span-2 grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="col-span-3">
+              <InputField
+                label="Product Name"
                 type="text"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
                 placeholder="Enter product name"
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Product ID</label>
-              <input
-                type="text"
+            <div className="col-span-1">
+              <InputField
+                label="Product ID"
                 value={generateProductId(productName)}
                 readOnly
-                className="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm sm:text-sm"
+                className="border-none bg-lightGray focus:ring-0 focus:border-none pointer-events-none cursor-default"
               />
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Category</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                required
-              >
-                <option value="" disabled>Select category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Price</label>
-              <div className="relative mt-1">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
-                  ₱
-                </span>
-                <input
+            <div className="col-span-3">
+           <label className="block text-sm font-semibold text-black">Category</label>
+                   <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="mt-2 p-3 block w-full border border-lightGray rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
+                    required
+                  >
+                    <option value="" disabled>
+                      Select category
+                    </option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+            <div className="col-span-1">
+              <div className="relative">
+                <InputField
+                  label="Price"
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   min="0"
                   step="0.01"
-                  className="pl-7 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
+                  placeholder="0"
+                  className="pl-7"
                   required
                 />
+                <span className="absolute inset-y-0 left-3 top-8 flex items-center text-gray-500">
+                  ₱
+                </span>
               </div>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Image</label>
-            <div
-              className="mt-1 flex justify-center items-center border-2 border-dashed border-gray-300 rounded-md p-4 cursor-pointer"
-              onDrop={handleDragDrop}
-              onDragOver={(e) => e.preventDefault()}
-            >
-              {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="h-24 w-24 object-cover rounded-md"
+          
+          <div className="flex flex-col items-center text-center justify-center border-2 border-dashed border-gray-300 rounded-md  ">
+            {imagePreview ? (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="h-32 w-32 object-cover rounded-md"
+              />
+            ) : (
+              <label htmlFor="fileUpload" className="cursor-pointer">
+                <Upload className="h-8 w-8 text-gray-400 mx-auto" />
+                <p className="text-sm text-gray-600 mt-4">
+                  Drag and Drop file <br></br>or <span className="text-primary  items-center "><br></br>Browse</span>
+                </p>
+                <input
+                  id="fileUpload"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e.target.files[0])}
+                  className="hidden"
                 />
-              ) : (
-                <label htmlFor="fileUpload" className="text-center cursor-pointer">
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto" />
-                  <p className="text-sm text-gray-600">Drag and Drop file or <span className="text-primary font-medium">Browse</span></p>
-                  <input
-                    id="fileUpload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
+              </label>
+            )}
           </div>
-          <div>
-            <h3 className="text-sm font-medium">Ingredients</h3>
-            <div className="space-y-4">
-              {ingredients.map((ingredient, index) => (
-                <div key={ingredient.id} className="grid grid-cols-3 gap-4">
-                  <select
-                    value={ingredient.name}
-                    onChange={(e) => {
-                      const newIngredients = [...ingredients];
-                      newIngredients[index].name = e.target.value;
-                      setIngredients(newIngredients);
-                    }}
-                    className="border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                    required
-                  >
-                    <option value="" disabled>Select ingredient</option>
-                    {ingredientOptions.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    value={ingredient.quantity}
-                    onChange={(e) => {
-                      const newIngredients = [...ingredients];
-                      newIngredients[index].quantity = e.target.value;
-                      setIngredients(newIngredients);
-                    }}
-                    placeholder="Qty."
-                    className="border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                    required
-                  />
-                  <div className="flex gap-2">
-                    <select
-                      value={ingredient.unit}
-                      onChange={(e) => {
-                        const newIngredients = [...ingredients];
-                        newIngredients[index].unit = e.target.value;
-                        setIngredients(newIngredients);
-                      }}
-                      className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                      required
-                    >
-                      <option value="" disabled>Unit</option>
-                      {unitOptions.map((unit) => (
-                        <option key={unit} value={unit}>
-                          {unit}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => removeIngredient(index)}
-                      disabled={ingredients.length === 1}
-                      className="p-1 hover:bg-gray-200 rounded-md text-gray-500"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addIngredient}
-                className="mt-2 flex items-center text-primary text-sm font-medium"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add
-              </button>
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark"
-            >
-              Add
-            </button>
-          </div>
-        </form>
+        </div>
+
+
+
+{/* Ingredients Section */}
+<div>
+  <div className="space-y-4">
+    {ingredients.map((ingredient, index) => (
+      <div className="grid grid-cols-12 gap-4 items-center" key={ingredient.id}>
+        {/* Dropdown for Ingredient Name */}
+        <div className="col-span-4 ">
+          <Dropdown
+            label="Select Ingredients"
+            placeholder="Select Ingredient"
+            options={ingredientOptions}
+            selectedValue={ingredient.name}
+            onSelect={(value) => {
+              const newIngredients = [...ingredients];
+              newIngredients[index].name = value;
+              setIngredients(newIngredients);
+            }}
+          />
+        </div>
+
+        {/* InputField for Quantity */}
+        <div className="col-span-4 mt-4">
+          <InputField
+            type="number"
+            value={ingredient.quantity}
+            onChange={(e) => {
+              const newIngredients = [...ingredients];
+              newIngredients[index].quantity = e.target.value;
+              setIngredients(newIngredients);
+            }}
+            placeholder="Qty."
+            required
+          />
+        </div>
+
+        {/* Dropdown for Unit */}
+        <div className="col-span-3 mt-6">
+          <Dropdown
+            options={unitOptions}
+            selectedValue={ingredient.unit}
+            placeholder="Unit"
+            onSelect={(value) => {
+              const newIngredients = [...ingredients];
+              newIngredients[index].unit = value;
+              setIngredients(newIngredients);
+            }}
+          />
+        </div>
+
+        {/* Remove Button */}
+        <div className="col-span-1 flex mt-6 ">
+          <button
+            type="button"
+            onClick={() => removeIngredient(index)}
+            disabled={ingredients.length === 1}
+            className="hover:bg-gray-200 rounded-md text-gray-500"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
-    </div>
+    ))}
+    <button
+      type="button"
+      onClick={addIngredient}
+      className="mt-2 flex items-center text-primary text-sm font-medium"
+    >
+      <Plus className="h-4 w-4 mr-1" />
+      Add Ingredient
+    </button>
+  </div>
+</div>
+
+
+
+        <div className="flex justify-end mt-6">
+          <button type="submit" className="bg-primary text-white px-4 py-2 rounded-md">
+            Add Product
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 };
 

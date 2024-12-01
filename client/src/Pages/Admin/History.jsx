@@ -64,14 +64,14 @@ const History = () => {
         />
 
           {/* Overview Cards */}
-          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4 mb-8 pl-8 pt-4">
-            <div className="bg-white border rounded-lg shadow p-4">
-              <p className="text-sm text-gray-500">Total Sales</p>
-              <p className="mt-2 text-lg font-bold">₱{totalSales}</p>
+          <h2 className="p-9 pt-3 pb-1 font-bold">Invoices</h2>
+          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4 mb-2 pl-8 pt-2 ">
+            <div className="bg-white border rounded-lg shadow p-2">
+              <p className="text-sm text-gray-500">Total Sales: <span className="mt-2 text-lg font-bold text-black">₱{totalSales}</span> </p>
             </div>
-            <div className="bg-white border rounded-lg shadow p-4">
-              <p className="text-sm text-gray-500">Total Transactions</p>
-              <p className="mt-2 text-lg font-bold">{totalTransactions}</p>
+
+            <div className="bg-white border rounded-lg shadow p-2">
+              <p className="text-sm text-gray-500">Total Transactions: <span className="mt-2 text-lg font-bold text-black">{totalTransactions}</span></p>
             </div>
           </div>
 

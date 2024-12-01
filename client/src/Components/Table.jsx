@@ -1,6 +1,6 @@
 const Table = ({ headers, rows }) => {
   return (
-    <div className="overflow-x-auto m-8 mt-0">
+    <div className="overflow-x-hidden m-8 mt-0">
       <table className="w-full border border-gray-300 table-fixed">
         <thead>
           <tr className="bg-gray-200 text-left text-sm font-medium text-gray-500">

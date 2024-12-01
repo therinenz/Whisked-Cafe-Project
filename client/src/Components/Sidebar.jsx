@@ -20,39 +20,38 @@ const Sidebar = ({ User }) => {
   ];
 
   return (
-    <aside className="w-52 h-screen border-r" aria-label="Sidebar">
-      {/* Sidebar Container */}
-      <div className="h-full px-3 py-4 overflow-y-auto bg-whiteBg">
-        {/* Logo and Cafe Information */}
-        <div className="flex items-center gap-3 mb-5 px-2.5">
-          <img src={logo} alt="Whisked Cafe Logo" className="w-8 h-8" />
-          <div>
-            <h2 className="text-balance font-bold text-primary">Whisked Cafe</h2>
-            <p className="text-sm text-gray-500">{User}</p>
-          </div>
+    <aside className="flex flex-col w-42 min-h-screen bg-white border-r border-gray-300">
+      {/* Logo and Cafe Information */}
+      <div className="flex items-center gap-3 px-4 py-4">
+        <img src={logo} alt="Whisked Cafe Logo" className="w-10 h-10" />
+        <div>
+          <h2 className="font-bold text-primary text-base">Whisked Cafe</h2>
+          <p className="text-sm text-gray-500">{User}</p>
         </div>
-
-        {/* Navigation Items */}
-        <ul className="space-y-2 font-normal text-sm pl-2">
-          {navItems.map((item) => (
-            <li key={item.name}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center p-2 rounded-lg hover:bg-gray-100 ${
-                    isActive ? "bg-gray-100 font-bold text-black" : "text-mediumGray"
-                  }`
-                }
-              >
-                {/* Icon */}
-                <span>{item.icon}</span>
-                {/* Text */}
-                <span className="ms-3">{item.name}</span>
-              </NavLink>
-            </li>
-          ))}
-        </ul>
       </div>
+
+      {/* Navigation Items */}
+      <ul className="space-y-1 text-sm">
+        {navItems.map((item) => (
+          <li key={item.name}>
+            <NavLink
+              to={item.path}
+              className={({ isActive }) =>
+                `relative flex items-center gap-3 p-2 pl-8 hover:bg-hoverColor ${
+                  isActive
+                    ? "font-bold text-black bg-hoverColor before:absolute before:top-0 before:bottom-0 before:left-0 before:w-1 before:bg-primary"
+                    : "text-gray-500"
+                }`
+              }
+            >
+              {/* Icon */}
+              <span>{item.icon}</span>
+              {/* Text */}
+              <span>{item.name}</span>
+            </NavLink>
+          </li>
+        ))}
+      </ul>
     </aside>
   );
 };

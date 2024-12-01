@@ -4,12 +4,19 @@ import Landing from "./Pages/Client-side/Landing";
 import Login from "./Pages/Login";
 import Dashboard from "./Pages/Admin/Dashboard";
 import Inventory from "./Pages/Admin/Inventory";
-import Product from "./Pages/Admin/Product";
 import History from "./Pages/Admin/History";
 import Employee from "./Pages/Admin/Employee";
 import Sidebar from "./Components/Sidebar";
+import Product from "./Pages/Admin/Product";
+import Archive from "./Components/Archive";
+import { useState } from "react";
+import Calendar from "./Components/Calendar";
 
 function App() {
+
+  const [archivedProducts, setArchivedProducts] = useState([]); // Shared state for archived products
+
+
   return (
     <Router>
       <Routes>
@@ -18,6 +25,8 @@ function App() {
         <Route path="/Login" element={<Login />} />
 
         {/* Admin routes */}
+        <Route path="/calendar" element={<Calendar />} />
+
         <Route
           path="/Dashboard"
           element={
@@ -58,10 +67,24 @@ function App() {
             </AdminLayout>
           }
         />
+      
+      <Route
+          path="/"
+          element={<Product setArchivedProducts={setArchivedProducts} />} // Pass as a prop
+        />
+        <Route
+          path="/archive"
+          element={<Archive archivedProducts={archivedProducts} setArchivedProducts={setArchivedProducts} />} // Pass as props
+        />
+
       </Routes>
     </Router>
   );
 }
+
+
+
+
 
 // Admin Layout Component (includes Sidebar)
 const AdminLayout = ({ children }) => {
@@ -69,7 +92,7 @@ const AdminLayout = ({ children }) => {
     <div className="flex">
       {/* Sidebar */}
       <Sidebar User="Owner" />
-      {/* Main content */}
+      {/* Main content */}  
       <div className="flex-1 bg-gray-50">{children}</div>
     </div>
   );

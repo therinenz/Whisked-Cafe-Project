@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MoreHorizontal, Edit2, Eye, Archive } from "lucide-react";
 import Google from "../../assets/Google.png";
 import Header from "../../Components/Header";
@@ -8,6 +8,7 @@ import Button from "../../Components/Button";
 import FilterButton from "../../Components/FilterButton";
 import AddProductModal from "../../Components/AddProductModal";
 import EditProductModal from "../../Components/EditProductModal";
+import { useNavigate } from "react-router-dom";
 
 // Sample product data
 const initialProducts = [
@@ -27,6 +28,30 @@ const Product = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null); // State to hold the product to edit
+  const navigate = useNavigate(); // Initialize navigation
+  const [archivedProducts, setArchivedProducts] = useState([]); // State to store archived products
+
+
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Prevent closing if the dropdown itself is clicked
+      if (!event.target.closest(".action-dropdown") && !event.target.closest(".rounded-full")) {
+        setShowActions(null); // Close dropdown if clicked outside
+      }
+    };
+  
+    document.addEventListener("click", handleClickOutside);
+  
+    // Cleanup the event listener when the component unmounts
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [showActions]);
+
+
+
+
 
 
   // Helper function to generate product ID
@@ -70,10 +95,12 @@ const Product = () => {
     ]);
     setIsModalOpen(false);
   };
-
+  
   const handleEditProduct = (product) => {
-    setEditingProduct(product); // Set the product to be edited
-    setIsEditModalOpen(true); // Open the edit modal
+    if (product) {
+      setEditingProduct(product); // Set the product to be edited
+      setIsEditModalOpen(true); // Open the edit modal
+    }
   };
 
   const handleUpdateProduct = (updatedProduct) => {
@@ -90,22 +117,30 @@ const Product = () => {
     setShowActions(null);
   };
 
-  const handleArchive = (productId) => {
-    console.log(`Archiving product with ID: ${productId}`);
-    setProducts((prevProducts) => prevProducts.filter((product) => product.id !== productId));
-    setShowActions(null);
-  };
-
   const handleFilterSelect = (filter) => {
     setSelectedFilter(filter);
     console.log(`Filter selected: ${filter}`);
   };
 
+ const handleArchive = (productId) => {
+  const productToArchive = products.find((product) => product.id === productId);
+  if (productToArchive) {
+    setArchivedProducts((prev) => [...prev, { ...productToArchive, status: "Archived" }]);
+    setProducts((prevProducts) => prevProducts.filter((product) => product.id !== productId));
+  }
+  setShowActions(null);
+};
+
+  const handleArchiveButtonClick = () => {
+    navigate("/archive"); // Navigate to the Archive page
+  };
+
+
   const productHeaders = ["Product ID", "Image", "Product Name", "Category", "Action"];
 
   const rows = filteredProducts.map((product) => ({
     product_id: product.id,
-    image: <img src={product.image} alt={product.name} className="h-12 w-12 rounded-lg object-cover" />,
+    image: <img src={product.image} alt={product.name} className="h-8 w-8 rounded-lg object-cover" />,
     product_name: product.name,
     category: product.category,
     action: (
@@ -120,13 +155,15 @@ const Product = () => {
     ),
   }));
 
+
+  
   return (
     <div className="flex h-screen">
       <div className="flex-1 bg-white overflow-y-auto">
         <Header title="Product" subheading="Organizing and updating product offerings" />
 
         {/* Headings */}
-        <div className="p-8">
+        <div className="p-8 pt-6 pb-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-base font-semibold text-gray-900">All Products</h1>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -137,8 +174,13 @@ const Product = () => {
                   options={["All Product", "Iced Coffee", "Non-Coffee", "Matcha", "Premium", "Pastry"]}
                   onFilterSelect={handleFilterSelect}
                 />
-                <button className="rounded-lg border border-gray-300 p-2 text-gray-700 hover:bg-gray-50">
-                  <Archive className="h-5 w-5" />
+    
+                {/* Archive Button */}
+                <button
+                  className="rounded-lg border border-gray-300 p-2 text-gray-700 hover:bg-gray-50"
+                  onClick={handleArchiveButtonClick} // Navigate to Archive Page
+                >
+                  <Archive className="h-5 w-5 text-primary" />
                 </button>
               </div>
             </div>
@@ -148,43 +190,43 @@ const Product = () => {
         {/* Product Table */}
         <Table headers={productHeaders} rows={rows} />
         {showActions && (
-          <div
-            style={{
-              position: "fixed",
-              top: dropdownPosition.top,
-              left: dropdownPosition.left,
-              zIndex: 50,
-            }}
-            className="w-36 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5"
-          >
-            {/* Action Buttons for products */}
-            <div className="py-1">
-              <button
-                onClick={() => handleEditProduct(filteredProducts.find((p) => p.id === showActions))}
-                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <Edit2 className="mr-3 h-4 w-4" />
-                Edit
-              </button>
+  <div
+    style={{
+      position: "fixed",
+      top: dropdownPosition.top,
+      left: dropdownPosition.left,
+      zIndex: 50,
+    }}
+    className="w-36 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 action-dropdown"
+  >
+    <div className="py-1">
+      <button
+        onClick={() => handleEditProduct(filteredProducts.find((p) => p.id === showActions))}
+        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        <Edit2 className="mr-3 h-4 w-4" />
+        Edit
+      </button>
 
-              <button
-                onClick={() => handleView(showActions)}
-                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <Eye className="mr-3 h-4 w-4" />
-                View
-              </button>
+      <button
+        onClick={() => handleView(showActions)}
+        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        <Eye className="mr-3 h-4 w-4" />
+        View
+      </button>
 
-              <button
-                onClick={() => handleArchive(showActions)}
-                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <Archive className="mr-3 h-4 w-4" />
-                Archive
-              </button>
-            </div>
-          </div>
-        )}
+      <button
+        onClick={() => handleArchive(showActions)}
+        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        <Archive className="mr-3 h-4 w-4" />
+        Archive
+      </button>
+    </div>
+  </div>
+)}
+
       </div>
 
       {/* Add Product Modal */}

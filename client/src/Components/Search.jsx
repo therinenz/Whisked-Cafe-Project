@@ -8,7 +8,7 @@ const Search = ({ placeholder, value, onChange }) => {
       <input
         type="text"
         placeholder={placeholder}
-        className="w-full rounded-xl border bg-slate-50 pl-10 pr-4 py-1.5 focus:border-primary focus:outline-none  focus:ring-primary sm:w-64"
+        className="w-full rounded-xl border border-lightGray bg-slate-50 pl-10 pr-4 py-1.5 shadow-sm focus:outline-none focus:ring-0 focus:border-primary sm:w-64"
         value={value}
         onChange={onChange}
       />

@@ -1,176 +1,181 @@
-import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Pencil, Check, Edit2 } from 'lucide-react';
+import Modal from './Modal';
+import InputField from './InputField';
 
-const EditProductModal = ({ isOpen, onClose, onUpdate, product }) => {
-  const [productName, setProductName] = useState("");
-  const [category, setCategory] = useState("");
-  const [price, setPrice] = useState(0);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [ingredients, setIngredients] = useState([]);
-  const [measurements, setMeasurements] = useState([]);
+const EditProductModal = ({ isOpen, onClose, onSave, initialData }) => {
+  const [productData, setProductData] = useState(() => {
+    return initialData || {
+      name: 'Spanish latte',
+      id: 'SPL001',
+      category: 'Iced Coffee',
+      price: 32,
+      ingredients: [
+        { name: 'Coffee Beans', amount: 10, unit: 'Grams' },
+        { name: 'Syrup', amount: 10, unit: 'Milliliter' },
+        { name: 'Sugar', amount: 20, unit: 'Pounds' },
+      ],
+      image: '/placeholder.svg?height=400&width=300',
+    };
+  });
+
+  const [editingIngredient, setEditingIngredient] = useState(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    if (product) {
-      setProductName(product.name);
-      setCategory(product.category);
-      setPrice(product.price || 0);
-      setImagePreview(product.image);
-      setIngredients(product.ingredients || []);
-      setMeasurements(product.measurements || []);
+    if (initialData) {
+      const hasPriceChanged = productData.price !== initialData.price;
+      const hasImageChanged = productData.image !== initialData.image;
+      const hasIngredientsChanged = !productData.ingredients.every((ingredient, index) =>
+        ingredient.amount === initialData.ingredients[index]?.amount
+      );
+
+      setHasChanges(hasPriceChanged || hasImageChanged || hasIngredientsChanged);
     }
-  }, [product]);
+  }, [productData, initialData]);
+
+  const handlePriceChange = (e) => {
+    const newPrice = Number(e.target.value);
+    setProductData((prevData) => ({ ...prevData, price: newPrice }));
+    setHasChanges(true);
+  };
+
+  const handleIngredientChange = (e, index) => {
+    const newAmount = Number(e.target.value);
+    setProductData((prevData) => {
+      const newIngredients = [...prevData.ingredients];
+      newIngredients[index] = { ...newIngredients[index], amount: newAmount };
+      return { ...prevData, ingredients: newIngredients };
+    });
+    setHasChanges(true);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!productName || !category || price <= 0) {
-      alert("Please fill in all fields correctly.");
-      return;
-    }
-
-    const updatedProduct = {
-      ...product,
-      name: productName,
-      category,
-      price,
-      image: imagePreview,
-      ingredients,
-      measurements,
-    };
-
-    onUpdate(updatedProduct);
+    onSave(productData); // Save the data
+    setHasChanges(false); // Reset changes flag after save
     onClose();
   };
 
-  if (!isOpen || !product) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-4xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Edit Product</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full">
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Product Name and ID */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Product Name</label>
-              <input
-                type="text"
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                placeholder="Enter product name"
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                required
-              />
+    <Modal isOpen={isOpen} title={<><Pencil className="h-5 w-5 mr-2 text-primary" /> Edit product</>} onClose={onClose}>
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <InputField
+                  label="Product Name"
+                  name="name"
+                  type="text"
+                  value={productData.name}
+                  readOnly
+                  className="border-none bg-lightGray focus:ring-0 focus:border-none pointer-events-none cursor-default"
+                  required
+                />
+              </div>
+              <div>
+                <InputField
+                  label="Product ID"
+                  name="id"
+                  type="text"
+                  value={productData.id}
+                  readOnly
+                  className="border-none bg-lightGray focus:ring-0 focus:border-none pointer-events-none cursor-default"
+                  required
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Product ID</label>
-              <input
-                type="text"
-                value={product.id}
-                readOnly
-                className="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm"
-              />
-            </div>
-          </div>
 
-          {/* Category and Price */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Category</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                required
-              >
-                <option value="">Select Category</option>
-                <option value="Iced Coffee">Iced Coffee</option>
-                <option value="Non-Coffee">Non-Coffee</option>
-                <option value="Pastry">Pastry</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Price</label>
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                required
-              />
-            </div>
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <InputField
+                  label="Category"
+                  name="category"
+                  type="text"
+                  value={productData.category}
+                  readOnly
+                  className="border-none bg-lightGray focus:ring-0 focus:border-none pointer-events-none cursor-default"
+                  required
+                />
+              </div>
 
-          {/* Ingredients and Measurements */}
-          <div>
-            <h3 className="text-sm font-medium">Ingredients</h3>
-            <div className="space-y-4">
-              {ingredients.map((ingredient, index) => (
-                <div key={index} className="grid grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    value={ingredient}
-                    onChange={(e) => {
-                      const newIngredients = [...ingredients];
-                      newIngredients[index] = e.target.value;
-                      setIngredients(newIngredients);
-                    }}
-                    placeholder="Ingredient"
-                    className="block w-full border-gray-300 rounded-md shadow-sm"
+              <div>
+                <div className="relative">
+                  <span className="absolute left-3 top-10 text-gray-500">₱</span>
+                  <InputField
+                    label="Price"
+                    name="price"
+                    type="number"
+                    value={productData.price}
+                    onChange={handlePriceChange} // Handle price changes
                     required
-                  />
-                  <input
-                    type="text"
-                    value={measurements[index] || ""}
-                    onChange={(e) => {
-                      const newMeasurements = [...measurements];
-                      newMeasurements[index] = e.target.value;
-                      setMeasurements(newMeasurements);
-                    }}
-                    placeholder="Measurement"
-                    className="block w-full border-gray-300 rounded-md shadow-sm"
-                    required
+                    className="pl-7 pt-3.5"
                   />
                 </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setIngredients([...ingredients, ""]);
-                setMeasurements([...measurements, ""]);
-              }}
-              className="text-sm text-primary font-medium"
-            >
-              Add Ingredient
-            </button>
-          </div>
-
-          {/* Image Preview */}
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700">Image Preview</label>
-            <div className="flex justify-center items-center border-2 border-dashed border-gray-300 rounded-md p-4">
-              {imagePreview ? (
-                <img src={imagePreview} alt="Preview" className="h-24 w-24 object-cover rounded-md" />
-              ) : (
-                <p>No image selected</p>
-              )}
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end mt-6">
-            <button type="submit" className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark">
-              Save Changes
-            </button>
+          <div className="flex justify-center items-start">
+            <img
+              src={productData.image}
+              alt={productData.name}
+              className="w-42 h-44 object-cover rounded-lg"
+            />
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-2xl">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-semibold text-black">Ingredients</h3>
+            <h3 className="text-sm font-semibold text-black">Measurement</h3>
+          </div>
+          <div className="space-y-3">
+            {productData.ingredients.map((ingredient, index) => (
+              <div key={index} className="flex justify-between items-center pt-2">
+                <span className="text-gray-700 sm:text-sm">{ingredient.name}</span>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    value={ingredient.amount}
+                    onChange={(e) => handleIngredientChange(e, index)} // Handle ingredient amount change
+                    className={`w-20 text-sm px-3 py-0 [] focus:ring-0 border-0 ${
+                      editingIngredient === index ? 'border-2 border-primary' : 'border-transparent bg-transparent'
+                    } rounded-lg text-right`}
+                    readOnly={editingIngredient !== index}
+                  />
+                  <span className="w-24 text-gray-500 text-sm">{ingredient.unit}</span>
+                  <button
+                    type="button"
+                    onClick={() => setEditingIngredient(editingIngredient === index ? null : index)}
+                    className="p-1 text-gray-400 hover:text-gray-600"
+                    aria-label={editingIngredient === index ? `Save ${ingredient.name}` : `Edit ${ingredient.name}`}
+                  >
+                    {editingIngredient === index ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Edit2 className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Save Button */}
+        <div className="flex justify-end mt-6">
+          <button
+            type="submit"
+            className={`px-6 py-2 rounded-lg transition-colors ${hasChanges ? 'bg-primary text-white' : 'bg-darkGray text-gray-700 cursor-not-allowed'}`}
+            disabled={!hasChanges} // Disable button if no changes
+          >
+            Save changes
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 };
 
