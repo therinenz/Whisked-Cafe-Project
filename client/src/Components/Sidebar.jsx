@@ -12,7 +12,7 @@ import logo from "../assets/Logo.png";
 
 const Sidebar = ({ User }) => {
   const navItems = [
-    { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
+    { name: "Dashboard", path: "/", icon: <LayoutDashboard className="w-5 h-5" /> },
     { name: "Inventory", path: "/inventory", icon: <Package className="w-5 h-5" /> },
     { name: "Product", path: "/product", icon: <ShoppingBasket className="w-5 h-5" /> },
     { name: "History", path: "/history", icon: <History className="w-5 h-5" /> },

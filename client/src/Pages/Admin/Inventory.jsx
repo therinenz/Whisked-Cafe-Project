@@ -2,6 +2,7 @@ import { useState } from "react";
 import Header from "../../Components/Header";
 import Search from "../../Components/Search";
 import Button from "../../Components/Button";
+import AddStockModal from "../../Components/AddStockModal";
 
 const MOCK_DATA = [
   {
@@ -39,6 +40,7 @@ const Inventory = () => {
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [activeDropdown, setActiveDropdown] = useState(null); // Tracks active dropdown
   const [searchTerm, setSearchTerm] = useState(""); // State for search input
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const toggleRow = (id) => {
     setExpandedRows((prev) => {
@@ -117,12 +119,14 @@ const Inventory = () => {
 
             <div className="flex gap-2">
 
-              <Button onClick={onclick} label="Add New Stock" />
+              <Button onClick={() => setIsAddModalOpen(true)} label="Add New Stock" />
+
 
               <button className="rounded-lg border border-gray-300 p-2 text-gray-700 hover:bg-gray-50">
                 Filter
-              </button>dfffffffffffffffffffffffxcfyth67u
+              </button>
 
+              
               
 
               <button
@@ -281,6 +285,11 @@ const Inventory = () => {
           </tbody>
         </table>
       </div>
+
+      <AddStockModal 
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+      />
     </div>
   );
 };

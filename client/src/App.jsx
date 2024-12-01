@@ -28,7 +28,7 @@ function App() {
         <Route path="/calendar" element={<Calendar />} />
 
         <Route
-          path="/Dashboard"
+          path="/"
           element={
             <AdminLayout>
               <Dashboard />
