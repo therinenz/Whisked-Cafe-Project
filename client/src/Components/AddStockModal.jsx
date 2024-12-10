@@ -1,4 +1,8 @@
 import { useState } from "react";
+import Modal from "./Modal";
+import Dropdown from "./Dropdown";
+import InputField from "./InputField";
+import { Plus } from "lucide-react";
 
 const AddStockModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
@@ -22,115 +26,117 @@ const AddStockModal = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[500px]">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-[#B85C38]">Add Stock</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            ×
-          </button>
-        </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={<><Plus className="h-5 w-5 mr-2 text-primary" /> Add Product</>}
+      className="w-[500px]"
+    >
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-1">
-              <label className="block text-sm text-gray-700 mb-1">Stock Name</label>
-              <input
-                type="text"
-                placeholder="Enter stock name"
-                className="w-full p-2 border rounded-lg"
-                value={formData.stockName}
-                onChange={(e) => setFormData({...formData, stockName: e.target.value})}
-              />
-            </div>
-            <div className="col-span-1">
-              <label className="block text-sm text-gray-700 mb-1">Stock ID</label>
-              <input
-                type="text"
-                value="Auto"
-                disabled
-                className="w-full p-2 border rounded-lg bg-gray-100"
-              />
-            </div>
-            <div className="col-span-1">
-              <label className="block text-sm text-gray-700 mb-1">Category</label>
-              <select
-                className="w-full p-2 border rounded-lg"
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
-              >
-                <option value="">Select category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-span-1">
-              <label className="block text-sm text-gray-700 mb-1">Unit</label>
-              <select
-                className="w-full p-2 border rounded-lg"
-                value={formData.unit}
-                onChange={(e) => setFormData({...formData, unit: e.target.value})}
-              >
-                <option value="">Select...</option>
-                {units.map((unit) => (
-                  <option key={unit} value={unit}>{unit}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-span-1">
-              <label className="block text-sm text-gray-700 mb-1">Quantity</label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-12 gap-4">
+          {/* Stock Name and ID */}
+          <div className="col-span-8">
+            <InputField
+              label="Stock Name"
+              placeholder="Enter stock name"
+              value={formData.stockName}
+              onChange={(e) => setFormData({...formData, stockName: e.target.value})}
+            />
+          </div>
+          <div className="col-span-4">
+            <InputField
+              label="Stock ID"
+              value="Auto"
+              disabled
+              className="bg-gray-100"
+            />
+          </div>
+
+          {/* Category, Unit, and Quantity */}
+          <div className="col-span-5">
+            <Dropdown
+              label="Category"
+              options={categories}
+              value={formData.category}
+              onChange={(e) => setFormData({...formData, category: e.target.value})}
+              placeholder="Select category"
+            />
+          </div>
+          <div className="col-span-4">
+            <label className="block text-sm font-medium text-gray-700">Unit</label>
+            <div className="flex">
               <input
                 type="number"
+                value={formData.unit}
+                onChange={(e) => setFormData({...formData, unit: e.target.value})}
                 placeholder="0"
-                className="w-full p-2 border rounded-lg"
-                value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+                className="w-1/3 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-primary"
               />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm text-gray-700 mb-1">Supplier</label>
-              <input
-                type="text"
-                placeholder="Enter supplier"
-                className="w-full p-2 border rounded-lg"
-                value={formData.supplier}
-                onChange={(e) => setFormData({...formData, supplier: e.target.value})}
-              />
-            </div>
-            <div className="col-span-1">
-              <label className="block text-sm text-gray-700 mb-1">Delivery date</label>
-              <input
-                type="date"
-                className="w-full p-2 border rounded-lg"
-                value={formData.deliveryDate}
-                onChange={(e) => setFormData({...formData, deliveryDate: e.target.value})}
-              />
-            </div>
-            <div className="col-span-1">
-              <label className="block text-sm text-gray-700 mb-1">Expiration date</label>
-              <input
-                type="date"
-                className="w-full p-2 border rounded-lg"
-                value={formData.expirationDate}
-                onChange={(e) => setFormData({...formData, expirationDate: e.target.value})}
-              />
+              <select
+                onChange={(e) => setFormData({...formData, unit: e.target.value})}
+                className="w-3/4 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {units.map((unit, index) => (
+                  <option key={index} value={unit}>
+                    {unit}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-          <div className="mt-6 flex justify-end">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-[#B85C38] text-white rounded-lg hover:bg-[#A34E2E]"
-            >
-              Add
-            </button>
+          <div className="col-span-3">
+            <InputField
+              label="Quantity"
+              type="number"
+              placeholder="0"
+              value={formData.quantity}
+              onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+            />
           </div>
-        </form>
-      </div>
-    </div>
+
+          {/* Supplier */}
+          <div className="col-span-12">
+            <InputField
+              label="Supplier"
+              placeholder="Enter supplier"
+              value={formData.supplier}
+              onChange={(e) => setFormData({...formData, supplier: e.target.value})}
+            />
+          </div>
+
+          {/* Dates */}
+          <div className="col-span-6">
+            <InputField  
+              label="Delivery date"
+              type="date"
+              placeholder="Choose date..."
+              value={formData.deliveryDate}
+              onChange={(e) => setFormData({...formData, deliveryDate: e.target.value})}
+            />
+          </div>
+          <div className="col-span-6">
+            <InputField
+              label="Expiration date"
+              type="date"
+              placeholder="Choose date..."
+              value={formData.expirationDate}
+              onChange={(e) => setFormData({...formData, expirationDate: e.target.value})}
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            type="submit"
+            className="px-6 py-2 bg-[#B85C38] text-white rounded-lg hover:bg-[#A34E2E]"
+          >
+            Add
+          </button> 
+        </div>
+      </form>
+    </Modal>
   );
 };
 

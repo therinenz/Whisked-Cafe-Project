@@ -27,11 +27,22 @@ const AddEmployee = ({ isOpen, onClose, onSave, existingEmployees = [] }) => {
     setEmployeeData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    const newEmployee = { ...employeeData, employeeId };
-    onSave(newEmployee);
-    setEmployeeData({ name: "", email: "", mobile: "", role: "" }); // Reset form data
-    onClose(); // Close modal
+  const handleSave = async () => {
+    try {
+      const newEmployee = {
+        employeeId: employeeId,
+        name: employeeData.name,
+        email: employeeData.email,
+        mobile: employeeData.mobile,
+        role: employeeData.role
+      };
+      
+      onSave(newEmployee);
+      setEmployeeData({ name: "", email: "", mobile: "", role: "" }); // Reset form
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      // Add error handling (e.g., show error message to user)
+    }
   };
 
   return (
@@ -67,7 +78,8 @@ const AddEmployee = ({ isOpen, onClose, onSave, existingEmployees = [] }) => {
           <InputField
             label="Employee ID"
             value={employeeId}
-            readOnly
+            onChange={() => {}}
+            readOnly={true}
             className="border-none bg-lightGray focus:ring-0 focus:border-none pointer-events-none cursor-default"
           />
         </div>

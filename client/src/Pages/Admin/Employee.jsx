@@ -6,18 +6,35 @@ import Table from "../../Components/Table";
 import Button from "../../Components/Button";
 import AddEmployee from "../../Components/AddEmployee";
 
-const initialEmployees = [
-  { id: "EMP001", name: "B. J Cabaat", email: "Bj@whiskedcafe.com", mobile: "+639090323355", role: "Cashier" },
-  { id: "EMP002", name: "Jin Failana", email: "Jin@whiskedcafe.com", mobile: "+639328183743", role: "Cashier" },
-  { id: "MAN001", name: "Ariel Cabona", email: "Ariel@whiskedcafe.com", mobile: "+639231233325", role: "Asst. Manager" },
-];
-
 const Employee = () => {
-  const [employees, setEmployees] = useState(initialEmployees);
+  const [employees, setEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showActions, setShowActions] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [isModalOpen, setIsModalOpen] = useState(false); // State to toggle modal
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/employee', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setEmployees(data);
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
 
   const filteredEmployees = employees.filter(
     (employee) =>
@@ -40,12 +57,26 @@ const Employee = () => {
     setShowActions(null);
   };
 
-  const handleAddEmployee = (newEmployee) => {
-    setEmployees((prevEmployees) => [
-      ...prevEmployees,
-      { ...newEmployee, id: `EMP${prevEmployees.length + 1}` },
-    ]);
-    setIsModalOpen(false); // Close modal after adding the employee
+  const handleAddEmployee = async (newEmployee) => {
+    try {
+      const response = await fetch('http://localhost:3000/api/employee', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newEmployee),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const savedEmployee = await response.json();
+      setEmployees((prevEmployees) => [...prevEmployees, savedEmployee]);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error adding employee:', error);
+    }
   };
 
   const toggleDropdown = (employeeId, target) => {

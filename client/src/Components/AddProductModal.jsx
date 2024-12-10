@@ -142,19 +142,19 @@ const AddProductModal = ({ isOpen, onClose, onAdd, existingProducts }) => {
                   className="pl-7"
                   required
                 />
-                <span className="absolute inset-y-0 left-3 top-8 flex items-center text-gray-500">
+                <span className="absolute inset-y-0 left-3 top-7 flex items-center text-gray-500">
                   ₱
                 </span>
               </div>
             </div>
           </div>
           
-          <div className="flex flex-col items-center text-center justify-center border-2 border-dashed border-gray-300 rounded-md  ">
+          <div className="flex flex-col items-center text-center justify-center border-2 border-dashed border-gray-300 rounded-md w-52 h-44 overflow-hidden ">
             {imagePreview ? (
               <img
                 src={imagePreview}
                 alt="Preview"
-                className="h-32 w-32 object-cover rounded-md"
+                className="object-cover"
               />
             ) : (
               <label htmlFor="fileUpload" className="cursor-pointer">
@@ -183,7 +183,7 @@ const AddProductModal = ({ isOpen, onClose, onAdd, existingProducts }) => {
       <div className="grid grid-cols-12 gap-4 items-center" key={ingredient.id}>
         {/* Dropdown for Ingredient Name */}
         <div className="col-span-4 ">
-          <Dropdown
+          <Dropdown 
             label="Select Ingredients"
             placeholder="Select Ingredient"
             options={ingredientOptions}
