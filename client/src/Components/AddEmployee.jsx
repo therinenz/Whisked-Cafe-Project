@@ -1,143 +1,165 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
 import { Plus } from "lucide-react";
 import InputField from "./InputField";
 import Dropdown from "./Dropdown";
 
-const AddEmployee = ({ isOpen, onClose, onSave, existingEmployees = [] }) => {
-  const [employeeData, setEmployeeData] = useState({
-    name: "",
-    email: "",
-    mobile: "",
-    role: "",
+const AddEmployee = ({ isOpen, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    mobile: '',
+    role: ''
   });
+  const [roleOptions, setRoleOptions] = useState([]);
 
-  // Generate Employee ID based on the employee name and existing employees
-  const employeeId = useMemo(() => {
-    if (!employeeData.name || employeeData.name.trim().length === 0) return "Auto";
-    const prefix = employeeData.name.slice(0, 3).toUpperCase();
-    const sameTypeCount = existingEmployees.filter(
-      (e) => e.employeeId && e.employeeId.startsWith(prefix)
-    ).length;
-    return `${prefix}${String(sameTypeCount + 1).padStart(3, "0")}`;
-  }, [employeeData.name, existingEmployees]);
+  useEffect(() => {
+    const fetchRoleOptions = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/employee/roles');
+        if (!response.ok) {
+          throw new Error('Failed to fetch roles');
+        }
+        const data = await response.json();
+        setRoleOptions(data);
+      } catch (error) {
+        console.error('Error fetching roles:', error);
+      }
+    };
+
+    fetchRoleOptions();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEmployeeData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleSave = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
     try {
-      const newEmployee = {
-        employeeId: employeeId,
-        name: employeeData.name,
-        email: employeeData.email,
-        mobile: employeeData.mobile,
-        role: employeeData.role
-      };
-      
-      onSave(newEmployee);
-      setEmployeeData({ name: "", email: "", mobile: "", role: "" }); // Reset form
+      console.log('Sending employee data:', formData);
+
+      const response = await fetch('http://localhost:3000/api/employee', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add employee');
+      }
+
+      console.log('Success response:', data);
+      alert('Employee added successfully!');
+      onSave(data);
+      onClose();
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        mobile: '',
+        role: ''
+      });
     } catch (error) {
-      console.error('Error adding employee:', error);
-      // Add error handling (e.g., show error message to user)
+      console.error('Error details:', error);
+      alert(`Error adding employee: ${error.message}`);
     }
   };
 
   return (
     <Modal
       isOpen={isOpen}
-      title={
-        <>
-          <Plus className="h-5 w-5 mr-2 text-primary" /> Add Employee
-        </>
-      }
+      title={<div className="flex items-center"><Plus className="h-5 w-5 mr-2 text-primary" />Add Employee</div>}
       onClose={onClose}
-      height="h-29"
     >
-
-
-
-      <div className="grid grid-cols-3 gap-4">
-        {/* Employee Name Field */}
-        <div className="col-span-2">
-          <InputField
-            label="Employee Name"
-            name="name"
-            type="text"
-            value={employeeData.name}
-            onChange={handleChange}
-            placeholder="Enter employee name"
-            required
-          />
-        </div>
-
-        {/* Employee ID Field */}
-        <div className="col-span-1">
-          <InputField
-            label="Employee ID"
-            value={employeeId}
-            onChange={() => {}}
-            readOnly={true}
-            className="border-none bg-lightGray focus:ring-0 focus:border-none pointer-events-none cursor-default"
-          />
-        </div>
-
-        {/* Email Field */}
-        <div className="col-span-2">
-          <InputField
-            label="Email"
-            name="email"
-            type="email"
-            value={employeeData.email}
-            onChange={handleChange}
-            placeholder="Enter email address"
-            required
-          />
-        </div>
-
-        {/* Mobile Number Field */}
-        <div className="col-span-1">
-          <InputField
-            label="Mobile No."
-            name="mobile"
-            type="text"
-            value={employeeData.mobile}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (/^\d*$/.test(value)) {
-                handleChange(e);
-              }
-            }}
-            placeholder="Enter mobile number"
-            required
-          />
-        </div>
-
-        {/* Role Field */}
-            <div className="col-span-2">
-          <Dropdown
-            label="Role"
-            options={["Cashier", "Asst. Manager"]}
-            selectedValue={employeeData.role}
-            onSelect={(value) => setEmployeeData((prev) => ({ ...prev, role: value }))}
-            placeholder="Select Role"
-          />
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-4 gap-3">
+          {/* Left Column - Name (larger) */}
+          <div className="col-span-4">
+            <InputField
+              label="Name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Enter full name"
+              required
+            />
           </div>
-     
 
-            {/* Submit Button */}
-            <div className="h-10 mt-8 flex justify-end col-span-1">
-                <button
-                onClick={handleSave}
-                className="px-16  bg-orange-700 text-white rounded-md hover:bg-orange-800"
-                >
-                Add
-                </button>
-                </div>
+         
 
-      </div>
+          {/* Left Column - Email (larger) */}
+          <div className="col-span-3">
+            <InputField
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter Email Address"
+              required
+            />
+          </div>
+
+          {/* Right Column - Mobile (smaller) */}
+          <div className="col-span-1">
+            <InputField
+              label="Mobile No."
+              name="mobile"
+              value={formData.mobile}
+              onChange={handleChange}
+              placeholder="Enter number"
+            />
+          </div>
+
+          {/* Left Column - Password (larger) */}
+          <div className="col-span-3">
+            <InputField
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter password"
+              required
+            />
+          </div>
+
+          {/* Right Column - Role (smaller) */}
+          <div className="col-span-1">
+            <Dropdown
+              label="Role"
+              options={roleOptions}
+              onSelect={(value) => {
+                console.log('Selected role:', value);
+                setFormData(prev => ({ ...prev, role: value }));
+              }}
+              selectedValue={formData.role}
+              placeholder="Select Role"
+            />
+          </div>
+
+          {/* Button - Full Width */}
+          <div className="col-span-4 flex justify-end">
+            <button
+              type="submit"
+              className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+      </form>
     </Modal>
   );
 };

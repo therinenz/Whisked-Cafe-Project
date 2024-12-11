@@ -1,26 +1,32 @@
 import React from "react";
 
-const InputField = ({
-  type = "text",
-  name,
-  value,
-  onChange,
-  placeholder = "",
-  label = "",
-  required = false,
-  className = "",
+const InputField = ({ 
+  label, 
+  name, 
+  type = "text", 
+  value, 
+  onChange, 
+  placeholder, 
+  required, 
+  readOnly,
+  disabled,
+  className 
 }) => {
   return (
-    <div>
-      {label && <label className="block text-sm font-semibold text-black">{label}</label>}
+    <div className="mb-4">
+      <label className="block text-sm font-semibold text-gray-700 mb-1">
+        {label}
+      </label>
       <input
         type={type}
-        name={name} // Add name here
+        name={name}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`mt-2 p-3 block w-full border border-lightGray rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-primary sm:text-sm ${className}`}
         required={required}
+        readOnly={readOnly}
+        disabled={disabled}
+        className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary ${className}`}
       />
     </div>
   );
