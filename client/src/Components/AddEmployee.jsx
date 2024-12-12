@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
-import { Plus } from "lucide-react";
+import { Plus, Eye } from "lucide-react";
 import InputField from "./InputField";
 import Dropdown from "./Dropdown";
 import { toast } from 'react-hot-toast';
@@ -50,8 +50,16 @@ const AddEmployee = ({
         password: employeeData.password,
         role: employeeData.role
       });
+    } else if (mode === "add") {
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        mobile: '',
+        role: ''
+      });
     }
-  }, [mode, employeeData]);
+  }, [mode, employeeData, isOpen]);
 
   // Validate form fields
   const validateField = (name, value) => {
@@ -184,107 +192,159 @@ const AddEmployee = ({
       setIsSubmitting(false);
     }
   };
-
+  
   return (
     <Modal
       isOpen={isOpen}
-      title={<div className="flex items-center"><Plus className="h-5 w-5 mr-2 text-primary" />Add Employee</div>}
+      title={
+        <div className="flex items-center">
+          {mode === "add" ? (
+            <Plus className="h-5 w-5 mr-2 text-primary" />
+          ) : (
+            <Eye className="h-5 w-5 mr-2 text-primary" />
+          )}
+          {mode === "add" ? "Add Employee" : "View Employee"}
+        </div>
+      }
       onClose={onClose}
     >
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-4 gap-3">
-          <div className="col-span-4">
-            <InputField
-              label="Name *"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter full name"
-              required
-              error={errors.name}
-            />
-            {errors.name && <div className="text-red-500 text-sm -mt-3 mb-2">{errors.name}</div>}
-          </div>
+        {mode === "view" ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Name</label>
+              <div className="bg-gray-100 p-3 rounded-md text-gray-600">
+                {formData.name}
+              </div>
+            </div>
 
-          <div className="col-span-3">
-            <InputField
-              label="Email *"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter Email Address"
-              required
-              error={errors.email}
-            />
-            {errors.email && <div className="text-red-500 text-sm -mt-3 mb-2">{errors.email}</div>}
-          </div>  
+            <div className="grid grid-cols-4 gap-4">
+              <div className="col-span-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                <div className="bg-gray-100 p-3 rounded-md text-gray-600">
+                  {formData.email}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Mobile No.</label>
+                <div className="bg-gray-100 p-3 rounded-md text-gray-600">
+                  {formData.mobile}
+                </div>
+              </div>
+            </div>
 
-          <div className="col-span-1">
-            <InputField
-              label="Mobile No. *"
-              name="mobile"
-              value={formData.mobile}
-              onChange={handleChange}
-              placeholder="Enter number"
-              required
-            />
-            {errors.mobile && <div className="text-red-500 text-sm -mt-3 mb-2">{errors.mobile}</div>}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="col-span-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+                <div className="bg-gray-100 p-3 rounded-md text-gray-600">
+                  {formData.password}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Role</label>
+                <div className="bg-gray-100 p-3 rounded-md text-gray-600">
+                  {formData.role}
+                </div>
+              </div>
+            </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-3">
+            <div className="col-span-4">
+              <InputField
+                label="Name *"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Enter full name"
+                required
+                error={errors.name}
+              />
+              {errors.name && <div className="text-red-500 text-sm -mt-3 mb-2">{errors.name}</div>}
+            </div>
 
-          <div className="col-span-3">
-            <InputField
-              label="Password *"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter password"
-              error={errors.password}
-              required
-            />
-            {errors.password && <div className="text-red-500 text-sm -mt-3 mb-2">{errors.password}</div>}
-          </div>
+            <div className="col-span-3">
+              <InputField
+                label="Email *"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter Email Address"
+                required
+                error={errors.email}
+              />
+              {errors.email && <div className="text-red-500 text-sm -mt-3 mb-2">{errors.email}</div>}
+            </div>  
 
-          <div className="col-span-1">
-            <Dropdown
-              label="Role *"
-              options={roleOptions}
-              onSelect={(value) => {
-                setFormData(prev => ({ ...prev, role: value }));
-                const error = validateField('role', value);
-                setErrors(prev => ({ ...prev, role: error }));
-              }}
-              selectedValue={formData.role}
-              placeholder="Select Role"
-            />
-            {errors.role && <div className="text-red-500 text-sm -mt-3 mb-2">{errors.role}</div>}
-          </div>
+            <div className="col-span-1">
+              <InputField
+                label="Mobile No. *"
+                name="mobile"
+                value={formData.mobile}
+                onChange={handleChange}
+                placeholder="Enter number"
+                required
+              />
+              {errors.mobile && <div className="text-red-500 text-sm -mt-3 mb-2">{errors.mobile}</div>}
+            </div>
 
-          <div className="col-span-4 flex justify-end">
-            <button
-              type="submit"
-              disabled={isSubmitting || 
-                Object.values(errors).some(error => error !== '') || 
-                !formData.name || 
-                !formData.email || 
-                !formData.password || 
-                !formData.role}
-              className={`bg-primary text-white px-4 py-2 rounded-md ${
-                (isSubmitting || 
-                  Object.values(errors).some(error => error !== '') || 
-                  !formData.name || 
-                  !formData.email || 
-                  !formData.password || 
-                  !formData.role)
-                  ? 'opacity-50 bg-gray-500 cursor-not-allowed' 
-                  : 'hover:bg-primary/90'
-              }`}
-            >
-              {isSubmitting ? 'Adding...' : 'Add'}
-            </button>
+            <div className="col-span-3">
+              <InputField
+                label="Password *"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter password"
+                error={errors.password}
+                required
+              />
+              {errors.password && <div className="text-red-500 text-sm -mt-3 mb-2">{errors.password}</div>}
+            </div>
+
+            <div className="col-span-1">
+              <Dropdown
+                label="Role *"
+                options={roleOptions}
+                onSelect={(value) => {
+                  setFormData(prev => ({ ...prev, role: value }));
+                  const error = validateField('role', value);
+                  setErrors(prev => ({ ...prev, role: error }));
+                }}
+                selectedValue={formData.role}
+                placeholder="Select Role"
+              />
+              {errors.role && <div className="text-red-500 text-sm -mt-3 mb-2">{errors.role}</div>}
+            </div>
+
+            {mode === "add" && (
+              <div className="col-span-4 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSubmitting || 
+                    Object.values(errors).some(error => error !== '') || 
+                    !formData.name || 
+                    !formData.email || 
+                    !formData.password || 
+                    !formData.role}
+                  className={`bg-primary text-white px-4 py-2 rounded-md ${
+                    (isSubmitting || 
+                      Object.values(errors).some(error => error !== '') || 
+                      !formData.name || 
+                      !formData.email || 
+                      !formData.password || 
+                      !formData.role)
+                      ? 'opacity-50 bg-gray-500 cursor-not-allowed' 
+                      : 'hover:bg-primary/90'
+                  }`}
+                >
+                  {isSubmitting ? 'Adding...' : 'Add'}
+                </button>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </form>
     </Modal>
   );

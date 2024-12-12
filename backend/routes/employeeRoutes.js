@@ -4,7 +4,23 @@ const db = require('../config/db');
 
 console.log('Loading employee routes...');
 
-// 1. GET roles (must come before /:id)
+// 1. GET all employees
+router.get('/', (req, res) => {
+  const query = `
+    SELECT id, name, email, mobile, role, created_at, last_logged_in, updated_at 
+    FROM employee
+  `;
+  
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching employees:', err);
+      return res.status(500).json({ error: 'Error fetching employees' });
+    }
+    res.json(results);
+  });
+});
+
+// 2. GET roles (must come before /:id)
 router.get('/roles', (req, res) => {
   console.log('Roles endpoint hit');
   const query = `SHOW COLUMNS FROM employee WHERE Field = 'role'`;
@@ -30,22 +46,6 @@ router.get('/roles', (req, res) => {
       console.error('Error parsing enum values:', error);
       res.status(500).json({ error: 'Error parsing role values' });
     }
-  });
-});
-
-// 2. GET all employees
-router.get('/', (req, res) => {
-  const query = `
-    SELECT id, name, email, mobile, role, created_at, last_logged_in, updated_at 
-    FROM employee
-  `;
-  
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error fetching employees:', err);
-      return res.status(500).json({ error: 'Error fetching employees' });
-    }
-    res.json(results);
   });
 });
 

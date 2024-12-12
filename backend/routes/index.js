@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const employeeRoutes = require('./routes/employeeRoutes');
-
 const app = express();
 
 // Middleware
@@ -18,7 +17,7 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-app.use(employeeRoutes);
+app.use('/api/employee', employeeRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {

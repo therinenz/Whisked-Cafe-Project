@@ -12,6 +12,7 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Mount the employee routes
 app.use('/api/employee', employeeRoutes)
