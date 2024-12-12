@@ -12,7 +12,7 @@ export default {
         black: '#2E2E2E',
         hover: '#A95A3C',
         lightGray: '#E0E0E0',
-        mediumGray: '#A9A9A9',
+        mediumGray: '#64748B',
         darkGray: '#757575',
         hoverColor: '#FBF6F2',
         

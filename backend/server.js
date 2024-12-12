@@ -13,10 +13,22 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Use routes
-app.use('/api/employee', employeeRoutes);
+// Mount the employee routes
+app.use('/api/employee', employeeRoutes)
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Something broke!' });
+});
+
+// 404 handler - Add this to handle undefined routes
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+
+module.exports = app;

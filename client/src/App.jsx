@@ -11,6 +11,7 @@ import Product from "./Pages/Admin/Product";
 import Archive from "./Components/Archive";
 import { useState } from "react";
 import Calendar from "./Components/Calendar";
+import { Toaster } from 'react-hot-toast';
 
 function App() {
 
@@ -19,6 +20,43 @@ function App() {
 
   return (
     <Router>
+      <Toaster
+        position="top-right"
+        containerStyle={{
+          top: 20,
+          right: 30, // This adds 20px padding from the right
+        }}
+        toastOptions={{
+          success: {
+            duration: 5000,
+            style: {
+              background: '#ffffff', // White background
+              padding: '13px', // Comfortable padding
+              color: '#22c55e', // Green text color for success
+              border: '1px solid #22c55e', // Green border for success
+              borderRadius: '12px', // Rounded corners for the box
+              boxShadow: '0 4px 6px -1px rgba(34, 197, 94, 0.4)', // Subtle green shadow
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+            },
+            icon: '✓', // Custom green checkmark
+           
+          },
+          
+          // You can also customize error toasts if needed
+          error: {
+            style: {
+              background: '#fff',
+              padding: '16px',
+              color: '#ef4444', // Red color
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            },
+          },
+        }}
+      />
       <Routes>
         {/* Client-side routes */}
         <Route path="/Landing" element={<Landing />} />

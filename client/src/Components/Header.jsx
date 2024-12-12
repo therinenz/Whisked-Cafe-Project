@@ -5,7 +5,7 @@ const Header = ({ title, subheading }) => {
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-2 pl-8  border-b bg-whiteBg">
       {/* Title and Subheading */}
       <div>
-        <h1 className="text-lg font-bold text-primary">{title}</h1>
+        <h1 className="text-lg font-extrabold text-primary">{title}</h1>
         <p className="text-sm text-darkGray">{subheading}</p>
       </div>
 
