@@ -1,20 +1,24 @@
 import React from 'react';
 
-const ConfirmationModal = ({ isOpen, onClose, onDelete }) => {
+const ConfirmationModal = ({ 
+  isOpen, 
+  onClose, 
+  onDelete, 
+  title = "Are you sure you want to delete this employee?",
+  message = "You won't be able to recover this once deleted.",
+  confirmText = "Delete"
+}) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-30"
         onClick={onClose}
       />
       
-      {/* Modal */}
       <div className="relative bg-white rounded-lg p-6 w-[480px] shadow-lg">
         <div className="space-y-2">
-          {/* Title with warning icon */}
           <div className="flex items-center gap-2">
             <svg 
               className="w-6 h-6 text-red-600" 
@@ -30,16 +34,14 @@ const ConfirmationModal = ({ isOpen, onClose, onDelete }) => {
               />
             </svg>
             <h2 className="text-base font-semibold text-red-600">
-              Are you sure you want to delete this employee?
+              {title}
             </h2>
           </div>
 
-          {/* Message */}
           <p className="text-gray-500 text-sm pl-8">
-            You won't be able to recover this once deleted.
+            {message}
           </p>
 
-          {/* Buttons */}
           <div className="flex justify-end gap-3 pt-1">
             <button
               onClick={onClose}
@@ -51,7 +53,7 @@ const ConfirmationModal = ({ isOpen, onClose, onDelete }) => {
               onClick={onDelete}
               className="px-4 py-1 text-base font-normal text-white bg-red-600 rounded-md hover:bg-red-700"
             >
-              Delete
+              {confirmText}
             </button>
           </div>
         </div>
