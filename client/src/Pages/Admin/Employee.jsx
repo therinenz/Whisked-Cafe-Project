@@ -93,7 +93,10 @@
     };
 
     const handleEdit = (employee) => {
-      console.log(`Editing employee:`, employee);
+      console.log('Edit mode activated for:', employee);
+      setCurrentEmployee(employee);
+      setModalMode("edit");
+      setIsModalOpen(true);
       setShowActions(null);
     };
 
@@ -154,8 +157,10 @@
       try {
         await fetchEmployees();
         setIsModalOpen(false);
+        setModalMode("add");
+        setCurrentEmployee(null);
       } catch (error) {
-        console.error('Error handling employee addition:', error);
+        console.error('Error handling employee operation:', error);
       }
     };
 
@@ -262,7 +267,7 @@
             }}
             onSave={handleAddEmployee}
             existingEmployees={employees}
-            mode={currentEmployee ? "view" : "add"}
+            mode={modalMode}
             employeeData={currentEmployee}
           />
 

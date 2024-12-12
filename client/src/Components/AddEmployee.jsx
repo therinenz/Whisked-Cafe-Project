@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
-import { Plus, Eye } from "lucide-react";
+import { Plus, Eye, Edit2 } from "lucide-react";
 import InputField from "./InputField";
 import Dropdown from "./Dropdown";
 import { toast } from 'react-hot-toast';
@@ -10,9 +10,11 @@ const AddEmployee = ({
   onClose, 
   onSave, 
   existingEmployees, 
-  mode = "add",
+  mode,
   employeeData = null
 }) => {
+  console.log('Current mode:', mode);
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -42,13 +44,22 @@ const AddEmployee = ({
   }, []);
 
   useEffect(() => {
-    if (mode === "view" && employeeData) {
+    if (mode === "edit" && employeeData) {
+      console.log('EDIT MODE - Employee Data received:', employeeData);
       setFormData({
-        name: employeeData.name,
-        email: employeeData.email,
-        mobile: employeeData.mobile,
-        password: employeeData.password,
-        role: employeeData.role
+        name: employeeData.name || '',
+        email: employeeData.email || '',
+        mobile: employeeData.mobile || '',
+        role: employeeData.role || '',
+        password: employeeData.password || ''
+      });
+    } else if (mode === "view" && employeeData) {
+      setFormData({
+        name: employeeData.name || '',
+        email: employeeData.email || '',
+        mobile: employeeData.mobile || '',
+        role: employeeData.role || '',
+        password: employeeData.password || ''
       });
     } else if (mode === "add") {
       setFormData({
@@ -81,11 +92,17 @@ const AddEmployee = ({
         return '';
         
       case 'password':
-        if (!value) {
-          return 'This field is required';
-        }
-        if (value.length < 6) {
-          return 'Password must be at least 6 characters';
+        if (mode === "add") {
+          if (!value) {
+            return 'This field is required';
+          }
+          if (value.length < 6) {
+            return 'Password must be at least 6 characters';
+          }
+        } else if (mode === "edit" && value) {
+          if (value.length < 6) {
+            return 'Password must be at least 6 characters';
+          }
         }
         return '';
         
@@ -114,6 +131,7 @@ const AddEmployee = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log('Field changed:', name, 'New value:', value);
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -127,72 +145,70 @@ const AddEmployee = ({
     }));
   };
   
+// In AddEmployee.jsx, modify the handleSubmit function:
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  try {
+    setIsSubmitting(true);
     
-    // Validate all fields before submission
-    const newErrors = {};
-    Object.keys(formData).forEach(key => {
-      const error = validateField(key, formData[key]);
-      if (error) newErrors[key] = error;
+    // Handle password exactly like other fields
+    const dataToSend = {
+      name: formData.name,
+      email: formData.email,
+      mobile: formData.mobile,
+      role: formData.role,
+      // Only include password if it's not empty in edit mode
+      ...(mode === "edit" && formData.password ? { password: formData.password } : {}),
+      // Always include password in add mode
+      ...(mode === "add" ? { password: formData.password } : {})
+    };
+
+    const url = mode === "edit" 
+      ? `http://localhost:3000/api/employee/${employeeData.id}` 
+      : 'http://localhost:3000/api/employee';
+
+    const response = await fetch(url, {
+      method: mode === "edit" ? 'PUT' : 'POST',
+      headers: {  
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(dataToSend)
     });
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.error || 'Failed to update employee');
     }
 
-    if (isSubmitting) return;
-    
-    try {
-      setIsSubmitting(true);
-      
-      const response = await fetch('http://localhost:3000/api/employee', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
+    onSave(responseData);
+    onClose();
+    toast.success(mode === "edit" ? "Employee updated successfully!" : "Employee added successfully!");
+  } catch (error) {
+    console.error('Error:', error);
+    toast.error(`Error ${mode === "edit" ? "updating" : "adding"} employee: ${error.message}`);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to add employee');
-      }
-
-      onSave(data);
-      
-      setFormData({
-        name: '',
-        email: '',
-        password: '',
-        mobile: '',
-        role: ''
-      });
-      onClose();
-      
-      toast.success(
-        <div>
-          <p className="font-normal">Employee Successfully Added!</p>
-          <p className="text-gray-500 text-xs">New employee has been created.</p>
-        </div>,
-        {
-          style: {
-            fontWeight: '500',
-            fontSize: '16px',
-          },
-        }
-      );
-    } catch (error) {
-      console.error('Error details:', error);
-      toast.error(`Error adding employee: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
   
+  // Add this function at the top of your component to check if any changes were made
+  const hasChanges = () => {
+    if (!employeeData) return true; // If no employeeData, assume it's a new entry
+    
+    return (
+      formData.name !== employeeData.name ||
+      formData.email !== employeeData.email ||
+      formData.mobile !== employeeData.mobile ||
+      formData.role !== employeeData.role ||
+      // Only consider password if it's been changed from empty
+      (formData.password && formData.password !== employeeData.password)
+    );
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -200,11 +216,18 @@ const AddEmployee = ({
         <div className="flex items-center">
           {mode === "add" ? (
             <Plus className="h-5 w-5 mr-2 text-primary" />
+          ) : mode === "edit" ? (
+            <Edit2 className="h-5 w-5 mr-2 text-brown-600" />
           ) : (
             <Eye className="h-5 w-5 mr-2 text-primary" />
           )}
-          {mode === "add" ? "Add Employee" : "View Employee"}
+          {mode === "add" ? "Add Employee" : mode === "edit" ? "Edit Employee" : "View Employee"}
         </div>
+      }
+      height={
+        mode === "view" ? "h-[400px]" : 
+        mode === "add" ? "h-[490px]" :
+        mode === "edit" ? "h-[490px]" : undefined
       }
       onClose={onClose}
     >
@@ -248,6 +271,105 @@ const AddEmployee = ({
               </div>
             </div>
           </div>
+        ) : mode === "edit" ? (
+          <>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="Enter full name"
+                />
+                {errors.name && <div className="text-red-500 text-sm mt-1">{errors.name}</div>}
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-3">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary"
+                    placeholder="Enter Email Address"
+                  />
+                  {errors.email && <div className="text-red-500 text-sm mt-1">{errors.email}</div>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Mobile No.</label>
+                  <input
+                    type="text"
+                    name="mobile"
+                    value={formData.mobile}
+                    onChange={handleChange}
+                    className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary"
+                    placeholder="Enter number"
+                  />
+                  {errors.mobile && <div className="text-red-500 text-sm mt-1">{errors.mobile}</div>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-3">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary"
+                    placeholder="Enter new password"
+                  />
+                  {errors.password && <div className="text-red-500 text-sm mt-1">{errors.password}</div>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Role</label>
+                  <Dropdown
+                    options={roleOptions}
+                    onSelect={(value) => {
+                      setFormData(prev => ({ ...prev, role: value }));
+                      const error = validateField('role', value);
+                      setErrors(prev => ({ ...prev, role: error }));
+                    }}
+                    selectedValue={formData.role}
+                    placeholder="Select Role"
+                  />
+                  {errors.role && <div className="text-red-500 text-sm mt-1">{errors.role}</div>}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end mt-4">
+              <button
+                type="submit"
+                disabled={
+                  isSubmitting || 
+                  Object.values(errors).some(error => error !== '') || 
+                  !formData.name || 
+                  !formData.email || 
+                  !formData.role ||
+                  !hasChanges()
+                }
+                className={`bg-primary text-white px-4 py-2 rounded-md ${
+                  (isSubmitting || 
+                    Object.values(errors).some(error => error !== '') || 
+                    !formData.name || 
+                    !formData.email || 
+                    !formData.role ||
+                    !hasChanges())
+                    ? 'opacity-50 bg-gray-500 cursor-not-allowed' 
+                    : 'hover:bg-primary/90'
+                }`}
+              >
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </>
         ) : (
           <div className="grid grid-cols-4 gap-3">
             <div className="col-span-4">
@@ -319,7 +441,7 @@ const AddEmployee = ({
             </div>
 
             {mode === "add" && (
-              <div className="col-span-4 flex justify-end">
+              <div className="col-span-4 flex justify-end pt-8">
                 <button
                   type="submit"
                   disabled={isSubmitting || 

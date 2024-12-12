@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
 const employeeRoutes = require('./routes/employeeRoutes');
-
 const app = express();
 
 // Middleware
@@ -16,6 +15,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Mount the employee routes
 app.use('/api/employee', employeeRoutes)
+
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -24,6 +25,7 @@ app.use((err, req, res, next) => {
 
 // 404 handler - Add this to handle undefined routes
 app.use((req, res) => {
+    console.log('404 hit for:', req.method, req.url);
     res.status(404).json({ error: 'Route not found' });
 });
 

@@ -2,7 +2,11 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 
-console.log('Loading employee routes...');
+// Single middleware for logging requests
+router.use((req, res, next) => {
+  console.log(`${req.method} ${req.originalUrl}`);
+  next();
+});
 
 // 1. GET all employees
 router.get('/', (req, res) => {
@@ -13,7 +17,6 @@ router.get('/', (req, res) => {
   
   db.query(query, (err, results) => {
     if (err) {
-      console.error('Error fetching employees:', err);
       return res.status(500).json({ error: 'Error fetching employees' });
     }
     res.json(results);
@@ -22,12 +25,10 @@ router.get('/', (req, res) => {
 
 // 2. GET roles (must come before /:id)
 router.get('/roles', (req, res) => {
-  console.log('Roles endpoint hit');
   const query = `SHOW COLUMNS FROM employee WHERE Field = 'role'`;
   
   db.query(query, (err, results) => {
     if (err) {
-      console.error('Error fetching roles:', err);
       return res.status(500).json({ error: 'Error fetching roles' });
     }
     
@@ -43,7 +44,6 @@ router.get('/roles', (req, res) => {
       );
       res.json(enumValues);
     } catch (error) {
-      console.error('Error parsing enum values:', error);
       res.status(500).json({ error: 'Error parsing role values' });
     }
   });
@@ -52,33 +52,22 @@ router.get('/roles', (req, res) => {
 // 3. GET single employee by ID
 router.get('/:id', (req, res) => {
   const employeeId = req.params.id;
-  console.log('Route hit - Fetching employee with ID:', employeeId);
 
-  // Validate employeeId is a number
   if (isNaN(employeeId)) {
-    console.log('Invalid ID format:', employeeId);
     return res.status(400).json({ error: 'Invalid employee ID format' });
   }
 
-  const query = `
-    SELECT * FROM employee WHERE id = ?
-  `;
-
-  console.log('Executing query:', query, 'with ID:', employeeId);
+  const query = `SELECT * FROM employee WHERE id = ?`;
 
   db.query(query, [employeeId], (err, results) => {
     if (err) {
-      console.error('Database error:', err);
       return res.status(500).json({ 
         error: 'Database error', 
         details: err.message 
       });
     }
 
-    console.log('Query results:', results);
-
     if (!results || results.length === 0) {
-      console.log('No employee found with ID:', employeeId);
       return res.status(404).json({ 
         error: 'Employee not found',
         details: `No employee exists with ID ${employeeId}`
@@ -93,7 +82,6 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
   const { name, email, password, mobile, role } = req.body;
   
-  // Validate required fields
   if (!name || !email || !password || !role) {
     return res.status(400).json({ 
       error: 'Missing required fields',
@@ -101,10 +89,8 @@ router.post('/', (req, res) => {
     });
   }
 
-  // First check if email already exists
   db.query('SELECT id FROM employee WHERE email = ?', [email], (err, results) => {
     if (err) {
-      console.error('Database error while checking email:', err);
       return res.status(500).json({ 
         error: 'Error checking email',
         details: err.message 
@@ -118,7 +104,6 @@ router.post('/', (req, res) => {
       });
     }
 
-    // If email doesn't exist, proceed with insertion
     const query = `
       INSERT INTO employee (name, email, password, mobile, role) 
       VALUES (?, ?, ?, ?, ?)
@@ -126,24 +111,20 @@ router.post('/', (req, res) => {
     
     db.query(query, [name, email, password, mobile, role], (err, result) => {
       if (err) {
-        console.error('Database error while adding employee:', err);
         return res.status(500).json({ 
           error: 'Error adding employee',
           details: err.message 
         });
       }
       
-      // Fetch the newly created employee
       db.query('SELECT * FROM employee WHERE id = ?', [result.insertId], (err, results) => {
         if (err) {
-          console.error('Error fetching new employee:', err);
           return res.status(500).json({ 
             error: 'Error fetching new employee',
             details: err.message 
           });
         }
         
-        console.log('Successfully added employee:', results[0]);
         res.status(201).json(results[0]);
       });
     });
@@ -160,7 +141,6 @@ router.delete('/:id', (req, res) => {
   const query = 'DELETE FROM employee WHERE id = ?';
   db.query(query, [employeeId], (err, result) => {
     if (err) {
-      console.error('Error deleting employee:', err);
       return res.status(500).json({ error: 'Error deleting employee' });
     }
     
@@ -170,6 +150,110 @@ router.delete('/:id', (req, res) => {
     
     res.json({ message: 'Employee deleted successfully' });
   });
+});
+
+// 6. PUT (Update) employee
+router.put('/:id', (req, res) => {
+  const employeeId = req.params.id;
+  const { name, email, mobile, role, password } = req.body;
+
+  if (isNaN(employeeId)) {
+    return res.status(400).json({ 
+      error: 'Invalid ID format',
+      details: 'Employee ID must be a number'
+    });
+  }
+
+  if (!name && !email && !mobile && !role && !password) {
+    return res.status(400).json({ 
+      error: 'No update data',
+      details: 'At least one field (name, email, mobile, password, or role) must be provided for update'
+    });
+  }
+
+  let updateFields = [];
+  let queryParams = [];
+
+  if (name) {
+    updateFields.push('name = ?');
+    queryParams.push(name);
+  }
+  if (email) {
+    updateFields.push('email = ?');
+    queryParams.push(email);
+  }
+  if (mobile) {
+    updateFields.push('mobile = ?');
+    queryParams.push(mobile);
+  }
+  if (role) {
+    updateFields.push('role = ?');
+    queryParams.push(role);
+  }
+  if (password) {
+    updateFields.push('password = ?');
+    queryParams.push(password);
+  }
+
+  updateFields.push('updated_at = CURRENT_TIMESTAMP');
+  queryParams.push(employeeId);
+
+  const query = `
+    UPDATE employee 
+    SET ${updateFields.join(', ')}
+    WHERE id = ?
+  `;
+
+  function executeUpdate() {
+    db.query(query, queryParams, (err, result) => {
+      if (err) {
+        return res.status(500).json({ 
+          error: 'Error updating employee',
+          details: err.message 
+        });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ 
+          error: 'Employee not found',
+          details: `No employee exists with ID ${employeeId}`
+        });
+      }
+
+      db.query('SELECT * FROM employee WHERE id = ?', [employeeId], (err, results) => {
+        if (err) {
+          return res.status(500).json({ 
+            error: 'Error fetching updated employee',
+            details: err.message 
+          });
+        }
+
+        res.json(results[0]);
+      });
+    });
+  }
+
+  if (email) {
+    db.query('SELECT id FROM employee WHERE email = ? AND id != ?', [email, employeeId], (err, results) => {
+      if (err) {
+        return res.status(500).json({ 
+          error: 'Error checking email',
+          details: err.message 
+        });
+      }
+
+      if (results.length > 0) {
+        return res.status(400).json({ 
+          error: 'Email already exists',
+          details: 'This email is already registered to another employee'
+        });
+      }
+
+      executeUpdate();
+    });
+  } else {
+    executeUpdate();
+  }
 });
 
 module.exports = router;
