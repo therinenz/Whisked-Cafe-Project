@@ -344,7 +344,6 @@
                 id.remaining_quantity, 
                 id.expiration_date, 
                 id.delivery_date,
-                id.status,
                 i.stock_id,
                 i.stock_name
             FROM inventory_details id

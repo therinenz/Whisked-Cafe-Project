@@ -30,26 +30,26 @@ const Inventory = () => {
         ]);
 
         const inventory = await inventoryRes.json();
-        const details = await detailsRes.json();
+        let details = await detailsRes.json();
 
-        console.log('Raw inventory:', inventory);
-        console.log('Raw details:', details);
+        if (details.error) {
+          console.error('Error from history endpoint:', details.error);
+          details = [];
+        }
 
-        // Filter and group details by inventory_id
+        // Group details by inventory_id
         const detailsByInventory = details.reduce((acc, detail) => {
-          if (detail.remaining_quantity > 0) {
-            if (!acc[detail.inventory_id]) {
-              acc[detail.inventory_id] = [];
-            }
-            acc[detail.inventory_id].push(detail);
+          if (!acc[detail.inventory_id]) {
+            acc[detail.inventory_id] = [];
           }
+          acc[detail.inventory_id].push(detail);
           return acc;
         }, {});
 
-        // Sort details by delivery_date for each inventory
+        // Sort details by delivery_date for each inventory (NEWEST FIRST)
         Object.keys(detailsByInventory).forEach(inventoryId => {
           detailsByInventory[inventoryId].sort((a, b) => 
-            new Date(b.delivery_date) - new Date(a.delivery_date)
+            new Date(a.delivery_date) - new Date(b.delivery_date)  // Changed sorting order
           );
         });
 
