@@ -27,7 +27,7 @@ const InputField = ({
         required={required}
         readOnly={readOnly}
         disabled={disabled}
-        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary 
+        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary
           ${error ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary'} 
           ${className}`}
       />

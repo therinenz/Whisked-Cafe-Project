@@ -199,15 +199,29 @@ const handleSubmit = async (e) => {
   
   // Add this function at the top of your component to check if any changes were made
   const hasChanges = () => {
-    if (!employeeData) return true; // For new entries
-    
-    return (
-      formData.name !== employeeData.name ||
-      formData.email !== employeeData.email ||
-      formData.mobile !== employeeData.mobile ||
-      formData.role !== employeeData.role ||
-      (formData.password && formData.password !== employeeData.password)
-    );
+    if (mode === "add") {
+      // For add mode, check if any field has been filled
+      return (
+        formData.name.trim() !== '' ||
+        formData.email.trim() !== '' ||
+        formData.mobile.trim() !== '' ||
+        formData.password.trim() !== '' ||
+        formData.role !== ''
+      );
+    }
+
+    // For edit mode, compare with original data
+    if (mode === "edit" && employeeData) {
+      return (
+        formData.name !== employeeData.name ||
+        formData.email !== employeeData.email ||
+        formData.mobile !== employeeData.mobile ||
+        formData.role !== employeeData.role ||
+        (formData.password && formData.password.trim() !== '')
+      );
+    }
+
+    return false;
   };
 
   const handleCloseAttempt = () => {

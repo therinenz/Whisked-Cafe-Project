@@ -87,6 +87,23 @@ const AddProductModal = ({ isOpen, onClose, onAdd, existingProducts }) => {
     }
   };
 
+  // Example API integration
+  const addProduct = async (productData) => {
+    try {
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      });
+      const data = await response.json();
+      // Update local state with new data
+    } catch (error) {
+      console.error('Error adding product:', error);
+    }
+  };
+
   return (
     <Modal isOpen={isOpen} title={<><Plus className="h-5 w-5 mr-2 text-primary" /> Add Product</>} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-6">

@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
 const employeeRoutes = require('./routes/employeeRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 const app = express();
 
 // Middleware
@@ -13,8 +15,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Mount the employee routes
+// Mount the routes
 app.use('/api/employee', employeeRoutes)
+app.use('/api/inventory', inventoryRoutes)
+app.use('/api/categories', categoryRoutes);
 
 
 // Error handling middleware

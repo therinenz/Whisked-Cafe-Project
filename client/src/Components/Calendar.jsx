@@ -1,141 +1,188 @@
-import React, { useState, useRef, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const Calendar = ({ onDateChange }) => {
+const Calendar = ({ selectedDate, onDateSelect, onClose }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef();
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [showYearPicker, setShowYearPicker] = useState(false);
+
+  const today = new Date(); // Current date
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
     currentDate.getMonth() + 1,
     0
   ).getDate();
-  const firstDay = new Date(
+
+  const firstDayOfMonth = new Date(
     currentDate.getFullYear(),
     currentDate.getMonth(),
     1
   ).getDay();
 
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const months = Array.from({ length: 12 }, (_, i) =>
-    new Date(0, i).toLocaleString("default", { month: "long" })
-  );
 
-  const handleMonthChange = (offset) => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + offset)
-    );
+  const years = Array.from({ length: 12 }, (_, i) => currentDate.getFullYear() - 5 + i);
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   };
 
-  const handleDateSelect = (day) => {
-    const newDate = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day
-    );
-    setSelectedDate(newDate);
-    onDateChange(newDate); // Pass the selected date to the parent component
-    setIsOpen(false); // Close the dropdown
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
-  const isToday = (day) =>
-    day === new Date().getDate() &&
-    currentDate.getMonth() === new Date().getMonth() &&
-    currentDate.getFullYear() === new Date().getFullYear();
+  const handleDateSelect = (date) => {
+    const correctedDate = new Date(date);
+    onDateSelect(correctedDate);
+    onClose(); // Close the calendar when a date is selected
+  };
 
-  const isSelected = (day) =>
-    day === selectedDate.getDate() &&
-    currentDate.getMonth() === selectedDate.getMonth() &&
-    currentDate.getFullYear() === selectedDate.getFullYear();
+  const handleMonthSelect = (index) => {
+    setCurrentDate(new Date(currentDate.getFullYear(), index, 1));
+    setShowMonthPicker(false); // Navigate back to the date view
+  };
 
-  const toggleDropdown = () => setIsOpen((prev) => !prev);
-
-  const handleClickOutside = (e) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-      setIsOpen(false);
-    }
+  const handleYearSelect = (year) => {
+    setCurrentDate(new Date(year, currentDate.getMonth(), 1));
+    setShowYearPicker(false); // Navigate back to the date view
   };
 
   useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+    const handleClickOutside = (event) => {
+      const target = event.target;
+      const isCalendarClick = target.closest(".calendar-dropdown");
+      const isDateInputClick = target.closest(".date-input");
+      const isMonthYearPicker = target.closest(".month-year-picker");
+      const isMonthYearSelection =
+        target.closest("[data-type='month-selection']") ||
+        target.closest("[data-type='year-selection']");
+
+      if (!isCalendarClick && !isDateInputClick && !isMonthYearPicker && !isMonthYearSelection) {
+        onClose?.();
+      }
     };
-  }, []);
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [onClose]);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      {/* Button to toggle calendar dropdown */}
-      <button
-        onClick={toggleDropdown}
-        className="flex items-center pr-4 py-1.5 bg-white border border-gray-200 rounded text-gray-700 hover:bg-gray-50"
-      >
-        <CalendarIcon className="w-10 h-4  text-[#8B4513]" />
-        {selectedDate.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })}
-      </button>
+    <div className="bg-white rounded-lg shadow p-4 w-[300px]">
+      <div className="flex justify-between items-center mb-4">
+        {!showMonthPicker && !showYearPicker && (
+          <button onClick={prevMonth}>
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        )}
 
-      {/* Calendar Dropdown */}
-      {isOpen && (
-        <div className="absolute left-1/2 mt-2 transform -translate-x-1/2 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
-          <div className="p-4">
-            {/* Month Navigation */}
-            <div className="flex items-center justify-between mb-2">
-              <button
-                onClick={() => handleMonthChange(-1)}
-                className="p-1 hover:bg-gray-100 rounded-full"
-              >
-                <ChevronLeft className="w-5 h-5 text-gray-600" />
-              </button>
-              <h2 className="text-sm font-medium text-gray-900">
-                {months[currentDate.getMonth()]} {currentDate.getFullYear()}
-              </h2>
-              <button
-                onClick={() => handleMonthChange(1)}
-                className="p-1 hover:bg-gray-100 rounded-full"
-              >
-                <ChevronRight className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-
-            {/* Days of the Week */}
-            <div className="grid grid-cols-7 text-center text-xs text-gray-500">
-              {days.map((day) => (
-                <div key={day}>{day.slice(0, 2)}</div>
-              ))}
-            </div>
-
-            {/* Calendar Days */}
-            <div className="grid grid-cols-7">
-              {Array.from({ length: firstDay }).map((_, i) => (
-                <div key={`empty-${i}`} />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1;
-                return (
-                  <button
-                    key={day}
-                    onClick={() => handleDateSelect(day)}
-                    className={`h-8 w-8 text-sm flex items-center justify-center rounded-full ${
-                      isToday(day)
-                        ? "bg-gray-900 text-white"
-                        : isSelected(day)
-                        ? "bg-gray-300 text-black"
-                        : "hover:bg-gray-100"
-                    }`}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+        <div className="flex gap-1">
+          <button
+            onClick={() => {
+              setShowMonthPicker(!showMonthPicker);
+              setShowYearPicker(false);
+            }}
+            className="font-semibold hover:bg-gray-200 px-2 py-1 rounded month-year-picker"
+          >
+            {months[currentDate.getMonth()]}
+          </button>
+          <button
+            onClick={() => {
+              setShowYearPicker(!showYearPicker);
+              setShowMonthPicker(false);
+            }}
+            className="font-semibold hover:bg-gray-200 px-2 py-1 rounded month-year-picker"
+          >
+            {currentDate.getFullYear()}
+          </button>
         </div>
+
+        {!showMonthPicker && !showYearPicker && (
+          <button onClick={nextMonth}>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {showMonthPicker ? (
+        <div className="grid grid-cols-3 gap-2">
+          {months.map((month, index) => (
+            <button
+              key={month}
+              onClick={() => {
+                handleMonthSelect(index);
+              }}
+              className={`p-2 text-sm rounded hover:bg-gray-200 
+                ${currentDate.getMonth() === index ? "bg-[#B85C38] text-white" : ""}`}
+            >
+              {month.slice(0, 3)}
+            </button>
+          ))}
+        </div>
+      ) : showYearPicker ? (
+        <div className="grid grid-cols-3 gap-2">
+          {years.map((year) => (
+            <button
+              key={year}
+              onClick={() => {
+                handleYearSelect(year);
+              }}
+              className={`p-2 text-sm rounded hover:bg-gray-200 
+                ${currentDate.getFullYear() === year ? "bg-[#B85C38] text-white" : ""}`}
+            >
+              {year}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {days.map((day) => (
+              <div key={day} className="text-center text-sm text-gray-500">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: firstDayOfMonth }).map((_, index) => (
+              <div key={`empty-${index}`} />
+            ))}
+
+            {Array.from({ length: daysInMonth }).map((_, index) => {
+              const day = index + 1;
+              const date = new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth(),
+                day,
+                12
+              );
+
+              // Check if the date matches today's date
+              const isToday =
+                today.toDateString() === date.toDateString();
+
+              return (
+                <button
+                  key={day}
+                  onClick={() => handleDateSelect(date)}
+                  className={`p-2 text-center rounded hover:bg-gray-200 
+                    ${date.toDateString() === selectedDate?.toDateString() ? "bg-primary text-white" : ""}
+                    ${isToday ? "bg-primary font-bold" : ""}`}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
