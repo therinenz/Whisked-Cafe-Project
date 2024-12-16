@@ -2,24 +2,25 @@ import { React, useState, useRef, useEffect } from "react";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
 import InputField from "./InputField";
-import { Plus } from "lucide-react";
+import { Plus, Eye } from "lucide-react";
 import Calendar from "./Calendar";
 import { inventoryService } from "../services/api";  
 
 
-const AddStockModal = ({ isOpen, onClose, onSubmit }) => {
+const AddStockModal = ({ isOpen, onClose, onSubmit, mode = "add", stockData = null }) => {
   const [lastUsedNumber, setLastUsedNumber] = useState(0);
   const [formData, setFormData] = useState({
     stockName: "",
     stockId: "",
     category: "",
     amountPerQty: 0,
+    unit: "kg",
     quantity: 0,
     supplier: "",
-    deliveryDate: "",
+    deliveryDate: new Date().toISOString().split('T')[0],
     expirationDate: "",
   });
-
+  
   const [showDeliveryCalendar, setShowDeliveryCalendar] = useState(false);
   const [showExpirationCalendar, setShowExpirationCalendar] = useState(false);
   const [calendarPosition, setCalendarPosition] = useState({ top: 0, left: 0 });
@@ -46,7 +47,26 @@ const AddStockModal = ({ isOpen, onClose, onSubmit }) => {
     };
   }, []);
   
-
+  useEffect(() => {
+    if (isOpen) {
+      // Reset form when modal is opened
+      setFormData({
+        stockName: "",
+        stockId: "",
+        category: "",
+        amountPerQty: 0,
+        unit: "kg",
+        quantity: 0,
+        supplier: "",
+        deliveryDate: new Date().toISOString().split('T')[0],
+        expirationDate: "",
+      });
+  
+      // Increment lastUsedNumber to ensure unique stock ID
+      setLastUsedNumber((prev) => prev + 1);
+    }
+  }, [isOpen]);
+  
   const toggleDeliveryCalendar = () => {
     const rect = deliveryDateRef.current.getBoundingClientRect();
     setCalendarPosition({
@@ -75,6 +95,18 @@ const AddStockModal = ({ isOpen, onClose, onSubmit }) => {
     return `${prefix}-${nextNumber}`;
   };
 
+const formatDate = (date) => {
+  if (!date) return ""; // Handle empty values
+
+  const year = date.getFullYear();
+  const month = date.toLocaleString("default", { month: "short" }); // e.g., Dec
+  const day = date.getDate();
+
+  return `${year} / ${month} / ${day}`;
+};
+
+
+
   const handleStockNameChange = (e) => {
     const newName = e.target.value;
     setFormData({
@@ -85,36 +117,96 @@ const AddStockModal = ({ isOpen, onClose, onSubmit }) => {
   };
 
   const categories = ["Base Ingredients", "Drinks", "Pastry"];
-  const units = ["Kilogram", "Liter", "Gram", "ml"];
-
+  
+  const units = [
+    "kg",
+    "liters",
+    "tablespoons",
+    "g",
+    "ml",
+    "teaspoons"
+  ];
+  
+  <select
+    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+    className="w-3/4 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-1 focus:ring-primary"
+  >
+    {units.map((unit, index) => (
+      <option key={index} value={unit.value}>
+        {unit.label}
+      </option>
+    ))}
+  </select>
+  
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
     try {
-      await inventoryApi.addStock({
-        stock_id: formData.stockId,
+      // Validate required fields
+      if (!formData.stockName || !formData.category || !formData.quantity || !formData.unit) {
+        alert("Please fill in all required fields");
+        return;
+      }
+
+      // Map category to category_id
+      const categoryMap = {
+        "Base Ingredients": 1,
+        "Drinks": 2,
+        "Pastry": 3
+      };
+
+      // Calculate total quantity based on unit per quantity
+      const totalQuantity = parseFloat(formData.quantity) * parseFloat(formData.amountPerQty);
+
+      const stockData = {
+        stock_id: generateStockId(formData.stockName),
         stock_name: formData.stockName,
-        category_id: formData.category,
-        quantity: Number(formData.quantity),
+        category_id: categoryMap[formData.category],
+        quantity: totalQuantity,          // Initial quantity
+        remaining_quantity: totalQuantity, // Same as initial quantity for new stock
         unit: formData.unit,
         delivery_date: formData.deliveryDate,
         expiration_date: formData.expirationDate,
-        threshold: 10,
-        status: 'Available'
-      });
-      
+        threshold: 2, // Default threshold
+        supplier: formData.supplier,
+        status: 'Available' // New stock is always available initially
+      };
+
+      console.log("Sending data to backend:", stockData);
+      const response = await inventoryService.addStock(stockData);
+    
+      // Refresh the inventory table
+      if (onSubmit) {
+        onSubmit(); // This should trigger a refresh of the inventory data
+      }
+
+      alert("Stock added successfully!");
       onClose();
-    } catch (err) {
-      console.error('Error adding stock:', err);
-      alert('Failed to add stock');
+
+    } catch (error) {
+      console.error("Error adding stock:", error);
+      alert(error.message || "Failed to add stock");
     }
   };
+  
 
+  
   return (
     <>
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={<><Plus className="h-5 w-5 mr-2 text-primary" /> Add Product</>}
+        title={
+          <>
+            {mode === "add" ? (
+              <Plus className="h-5 w-5 mr-2 text-primary" />
+            ) : (
+              <Eye className="h-5 w-5 mr-2 text-primary" />
+            )}
+            {mode === "add" ? "Add New Stock" : "View Stock"}
+          </>
+        }
         className="w-[500px] position-fixed"
         height="h-[570px]"
       >
@@ -129,6 +221,7 @@ const AddStockModal = ({ isOpen, onClose, onSubmit }) => {
                 placeholder="Enter stock name"
                 value={formData.stockName}
                 onChange={(e) => setFormData({...formData, stockName: e.target.value})}
+                disabled={mode === "view"}
               />
             </div>
             <div className="col-span-3">
@@ -144,35 +237,55 @@ const AddStockModal = ({ isOpen, onClose, onSubmit }) => {
 
             {/* Category, Unit, and Quantity */}
             <div className="col-span-4">
-              <Dropdown
-                label="Category"
-                options={categories}
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
-                placeholder="Select category"
-              />
+            <Dropdown
+  label="Category"
+  options={categories}
+  selectedValue={formData.category} // Pass the current value to display
+  onSelect={(value) => {
+    setFormData({ ...formData, category: value }); // Update state with selected value
+    console.log("Category Selected:", value); // Debugging to verify
+  }}
+  placeholder="Select category"
+/>
+
+
             </div>
             <div className="col-span-5 mt-1">
               <label className="block text-sm font-semibold text-gray-700 mb-1">Unit per Quantity</label>
+              
+              
+              
               <div className="flex">
-                <input
-                  type="number"
-                  value={formData.unit}
-                  onChange={(e) => setFormData({...formData, unit: e.target.value})}
-                  placeholder="0"
-                  className="w-1/3 px-3 py-2.5 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <select
-                  onChange={(e) => setFormData({...formData, unit: e.target.value})}
-                  className="w-3/4 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  {units.map((unit, index) => (
-                    <option key={index} value={unit}>
-                      {unit}
-                    </option>
-                  ))}
-                </select>
-              </div>
+  {/* Input Field for Amount */}
+  <input
+    type="number"
+    value={formData.amountPerQty} // Separate state
+    onChange={(e) =>
+      setFormData({ ...formData, amountPerQty: e.target.value })
+    }
+    placeholder="0"
+    className="w-1/3 px-3 py-2.5 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-primary"
+  />
+
+  {/* Dropdown for Unit */}
+  <select
+    value={formData.unit} // State for unit
+    onChange={(e) =>
+      setFormData({ ...formData, unit: e.target.value })
+    }
+    className="w-3/4 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-1 focus:ring-primary"
+  >
+    {units.map((unit, index) => (
+      <option key={index} value={unit}>
+        {unit}
+      </option>
+    ))}
+  </select>
+</div>
+
+
+
+
             </div>
             <div className="col-span-3 mt-1">
               <InputField
@@ -203,7 +316,7 @@ const AddStockModal = ({ isOpen, onClose, onSubmit }) => {
                 <input
                   type="text"
                   className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary cursor-pointer date-input"
-                  value={formData.deliveryDate ? new Date(formData.deliveryDate).toLocaleDateString() : ''}
+                  value={formData.deliveryDateDisplay || ''}
                   onClick={toggleDeliveryCalendar}
                   readOnly
                   placeholder="Select date"
@@ -218,7 +331,7 @@ const AddStockModal = ({ isOpen, onClose, onSubmit }) => {
                 <input
                   type="text"
                   className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary cursor-pointer date-input"
-                  value={formData.expirationDate ? new Date(formData.expirationDate).toLocaleDateString() : ''}
+                  value={formData.expirationDateDisplay || ''}
                   onClick={toggleExpirationCalendar}
                   readOnly
                   placeholder="Select date"
@@ -227,14 +340,17 @@ const AddStockModal = ({ isOpen, onClose, onSubmit }) => {
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end">
-            <button
-              type="submit"
-              className="px-6 py-2 bg-[#B85C38] text-white rounded-lg hover:bg-[#A34E2E]"
-            >
-              Add
-            </button> 
-          </div>
+          {/* Only show Add button in add mode */}
+          {mode === "add" && (
+            <div className="mt-6 flex justify-end">
+              <button
+                type="submit"
+                className="px-6 py-2 bg-[#B85C38] text-white rounded-lg hover:bg-[#A34E2E]"
+              >
+                Add
+              </button> 
+            </div>
+          )}
         </form>
       </Modal>
 
@@ -250,15 +366,17 @@ const AddStockModal = ({ isOpen, onClose, onSubmit }) => {
           }}
         >
           <Calendar
-            selectedDate={formData.deliveryDate ? new Date(formData.deliveryDate) : null}
-            onDateSelect={(date) => {
-              setFormData({
-                ...formData,
-                deliveryDate: date.toISOString().split('T')[0]
-              });
-              setShowDeliveryCalendar(false);
-            }}
-          />
+  selectedDate={formData.deliveryDate ? new Date(formData.deliveryDate) : null}
+  onDateSelect={({ dbFormat, displayFormat }) => {
+    setFormData({
+      ...formData,
+      deliveryDate: dbFormat,      // Store DB format for submission
+      deliveryDateDisplay: displayFormat  // Store display format for input
+    });
+  }}
+  onClose={() => setShowDeliveryCalendar(false)}
+/>
+
         </div>
       )}
 
@@ -272,16 +390,18 @@ const AddStockModal = ({ isOpen, onClose, onSubmit }) => {
             zIndex: 1000,
           }}
         >
-          <Calendar
-            selectedDate={formData.expirationDate ? new Date(formData.expirationDate) : null}
-            onDateSelect={(date) => {
-              setFormData({
-                ...formData,
-                expirationDate: date.toISOString().split('T')[0]
-              });
-              setShowExpirationCalendar(false);
-            }}
-          />
+                      <Calendar
+              selectedDate={formData.expirationDate ? new Date(formData.expirationDate) : null}
+              onDateSelect={({ dbFormat, displayFormat }) => {
+                setFormData({
+                  ...formData,
+                  expirationDate: dbFormat,      // Store DB format for submission
+                  expirationDateDisplay: displayFormat  // Store display format for input
+                });
+              }}
+              onClose={() => setShowExpirationCalendar(false)}
+            />
+
           
         </div>
       )}

@@ -9,15 +9,31 @@ export const inventoryService = {
   },
 
   addStock: async (stockData) => {
-    const response = await fetch(`${API_URL}/inventory`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(stockData),
-    });
-    if (!response.ok) throw new Error('Failed to add stock');
-    return response.json();
+    try {
+      const response = await fetch(`${API_URL}/inventory`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(stockData),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // Throw error with more details
+        throw {
+          status: response.status,
+          data: data,
+          message: data.error || 'Failed to add stock'
+        };
+      }
+      
+      return data;
+    } catch (error) {
+      console.error("API Error Details:", error);
+      throw error;
+    }
   },
 
   archiveStock: async (id) => {

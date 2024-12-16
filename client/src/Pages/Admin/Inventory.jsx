@@ -20,6 +20,8 @@ const Inventory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stockHistory, setStockHistory] = useState({});
+  const [viewMode, setViewMode] = useState("add");
+  const [selectedStock, setSelectedStock] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -263,6 +265,41 @@ const Inventory = () => {
     return <div className="p-8 text-red-600">Error: {error}</div>;
   }
 
+
+  const handleSubmit = async () => {
+    try {
+      const [inventoryRes, detailsRes] = await Promise.all([
+        fetch('http://localhost:3000/api/inventory'),
+        fetch('http://localhost:3000/api/inventory/history')
+      ]);
+  
+      const inventory = await inventoryRes.json();
+      let details = await detailsRes.json();
+  
+      if (details.error) {
+        console.error('Error fetching updated details:', details.error);
+        details = [];
+      }
+  
+      // Process and update the state
+      const detailsByInventory = details.reduce((acc, detail) => {
+        if (!acc[detail.inventory_id]) {
+          acc[detail.inventory_id] = [];
+        }
+        acc[detail.inventory_id].push(detail);
+        return acc;
+      }, {});
+  
+      setInventoryData(inventory);
+      setStockHistory(detailsByInventory);
+      console.log("Inventory updated successfully!");
+    } catch (error) {
+      console.error('Error updating inventory:', error);
+      alert("Failed to refresh inventory data!");
+    }
+  };
+  
+
   return (
     <div className="overflow-x-hidden">
       <Header
@@ -348,6 +385,7 @@ const Inventory = () => {
                         )}
                         <span>{stock.stock_id}</span>
                       </div>
+                      
                     </td>
                     <td className="py-2 text-sm text-gray-900">{stock.name}</td>
                     <td className="py-2 text-sm text-gray-900">
@@ -432,6 +470,9 @@ const Inventory = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    setViewMode("view");
+                    setSelectedStock(inventoryData.find(item => item.stock_id === activeDropdown.replace('main-', '')));
+                    setIsAddModalOpen(true);
                     setActiveDropdown(null);
                   }}
                   className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -443,6 +484,9 @@ const Inventory = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    setViewMode("edit");
+                    setSelectedStock(inventoryData.find(item => item.stock_id === activeDropdown.replace('main-', '')));
+                    setIsAddModalOpen(true);
                     setActiveDropdown(null);
                   }}
                   className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -481,9 +525,16 @@ const Inventory = () => {
         </div>
       )}
 
-      <AddStockModal 
+      <AddStockModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setViewMode("add");
+          setSelectedStock(null);
+        }}
+        onSubmit={handleSubmit} // Fixed here
+        mode={viewMode}
+        stockData={selectedStock}
       />
     </div>
   );

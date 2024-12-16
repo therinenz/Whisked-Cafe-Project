@@ -15,6 +15,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Debug middleware
+app.use((req, res, next) => {
+  console.log('Request URL:', req.originalUrl);
+  next();
+});
+
 // Mount the routes
 app.use('/api/employee', employeeRoutes)
 app.use('/api/inventory', inventoryRoutes)
@@ -24,13 +30,15 @@ app.use('/api/categories', categoryRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ error: 'Something broke!' });
+    res.status(500).json({ error: 'Internal Server Error' });
 });
 
 // 404 handler - Add this to handle undefined routes
 app.use((req, res) => {
-    console.log('404 hit for:', req.method, req.url);
-    res.status(404).json({ error: 'Route not found' });
+    res.status(404).json({
+        error: 'Not Found',
+        message: `Route ${req.originalUrl} not found`
+    });
 });
 
 const PORT = process.env.PORT || 3000;
