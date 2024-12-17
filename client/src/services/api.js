@@ -1,81 +1,27 @@
 import axios from 'axios';
-const API_URL = 'http://localhost:3000/api';
+
+// Create an axios instance with the base URL
+const api = axios.create({
+  baseURL: 'http://localhost:3000', // Make sure this matches your backend server port
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
 
 export const inventoryService = {
-  getAll: async () => {
-    const response = await fetch(`${API_URL}/inventory`);
-    if (!response.ok) throw new Error('Failed to fetch inventory');
-    return response.json();
+  getAllStock: async () => {
+    const response = await api.get('/api/inventory');
+    return response.data;
   },
-
+  
+  getStockById: async (id) => {
+    const response = await api.get(`/api/inventory/${id}`);
+    return response.data;
+  },
+  
   addStock: async (stockData) => {
-    try {
-      const response = await fetch(`${API_URL}/inventory`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(stockData),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        // Throw error with more details
-        throw {
-          status: response.status,
-          data: data,
-          message: data.error || 'Failed to add stock'
-        };
-      }
-      
-      return data;
-    } catch (error) {
-      console.error("API Error Details:", error);
-      throw error;
-    }
-  },
-
-  archiveStock: async (id) => {
-    const response = await fetch(`${API_URL}/inventory/${id}/archive`, {
-      method: 'PUT',
-    });
-    if (!response.ok) throw new Error('Failed to archive stock');
-    return response.json();
-  },
-
-  moveToHistory: async (stockId) => {
-    const response = await fetch(`${API_URL}/inventory/${stockId}/move-to-history`, {
-      method: 'POST',
-    });
-    if (!response.ok) throw new Error('Failed to move stock to history');
-    return response.json();
-  },
-
-  getStockHistory: async () => {
-    const response = await fetch(`${API_URL}/inventory/history`);
-    if (!response.ok) throw new Error('Failed to fetch stock history');
-    return response.json();
-  },
-
-  restock: async (stockId, restockData) => {
-    const response = await fetch(`${API_URL}/inventory/${stockId}/restock`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(restockData),
-    });
-    if (!response.ok) throw new Error('Failed to restock inventory');
-    return response.json();
-  },
-
-  cleanupEmptyStocks: async () => {
-    const response = await fetch(`${API_URL}/inventory/cleanup-empty-stocks`, {
-      method: 'DELETE'
-    });
-    if (!response.ok) throw new Error('Failed to cleanup empty stocks');
-    return response.json();
-  },
+    const response = await api.post('/api/inventory', stockData);
+    return response.data;
+  }
 };
 

@@ -3,6 +3,7 @@ import Header from "../../Components/Header";
 import Search from "../../Components/Search";
 import Button from "../../Components/Button";
 import AddStockModal from "../../Components/AddStockModal";
+import ViewStockModal from "../../Components/ViewStockModal";
 import { MoreHorizontal, Edit2, Eye, RefreshCcw, Archive, ChevronDown, ChevronRight, FilterIcon, ArchiveIcon, MinusCircle } from "lucide-react";
 import { inventoryService } from "../../services/api";
 
@@ -22,6 +23,7 @@ const Inventory = () => {
   const [stockHistory, setStockHistory] = useState({});
   const [viewMode, setViewMode] = useState("add");
   const [selectedStock, setSelectedStock] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -109,18 +111,74 @@ const Inventory = () => {
     }
   };
 
-  const MainDropdown = ({ id, onRestock, status }) => (
+  const MainDropdown = ({ stock, onRestock, activeDropdown, setActiveDropdown, dropdownPosition, handleViewStock, setViewMode, setSelectedStock, setIsAddModalOpen, handleArchive }) => (
     <div className="relative flex justify-center">
       <button
         onClick={(e) => {
           e.stopPropagation();
-          toggleDropdown(`main-${id}`, e.currentTarget);
+          toggleDropdown(`main-${stock.id}`, e.currentTarget);
         }}
         className="rounded-full p-1 hover:bg-gray-100"
       >
         <MoreHorizontal className="h-5 w-5 text-gray-500" />
       </button>
-      
+
+      {activeDropdown === `main-${stock.id}` && (
+        <div
+          style={{
+            position: "fixed",
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            zIndex: 50,
+          }}
+          className="w-36 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 action-dropdown"
+        >
+          <div className="py-1">
+            <button
+              onClick={() => {
+                handleViewStock(stock.id);
+                setActiveDropdown(null);
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              <Eye className="mr-3 h-4 w-4" />
+              View
+            </button>
+            <button
+              onClick={() => {
+                setViewMode("edit");
+                setSelectedStock(stock);
+                setIsAddModalOpen(true);
+                setActiveDropdown(null);
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              <Edit2 className="mr-3 h-4 w-4" />
+              Edit
+            </button>
+            <button
+              onClick={() => {
+                onRestock(stock.id);
+                setActiveDropdown(null);
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              <RefreshCcw className="mr-3 h-4 w-4" />
+              Restock
+            </button>
+            <button
+              onClick={() => {
+                handleArchive(stock.id);
+                setActiveDropdown(null);
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+            >
+              <Archive className="mr-3 h-4 w-4" />
+              Archive
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -152,8 +210,8 @@ const Inventory = () => {
 
   const filteredData = filterByStatus(
     inventoryData.filter((item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.stock_id.toLowerCase().includes(searchTerm.toLowerCase())
+      item?.name?.toLowerCase()?.includes(searchTerm) ||
+      item?.stock_id?.toLowerCase()?.includes(searchTerm)
     )
   );
 
@@ -300,6 +358,30 @@ const Inventory = () => {
   };
   
 
+
+  const handleViewStock = async (id) => {
+    try {
+      const response = await inventoryService.getStockById(id);
+      setSelectedStock(response);
+      setIsViewModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching stock:", error);
+    }
+  };
+  
+
+  const handleStockNameChange = (e) => {
+    setFormData({ ...formData, stockName: e.target.value });
+  };
+
+  const toggleDeliveryCalendar = () => {
+    setShowDeliveryCalendar(!showDeliveryCalendar);
+  };
+
+  const toggleExpirationCalendar = () => {
+    setShowExpirationCalendar(!showExpirationCalendar);
+  };
+
   return (
     <div className="overflow-x-hidden">
       <Header
@@ -405,9 +487,16 @@ const Inventory = () => {
                     </td>
                     <td className="px-8 py-2">
                       <MainDropdown
-                        id={stock.stock_id}
-                        onRestock={() => handleRestock(stock.stock_id)}
-                        status={stock.status}
+                        stock={stock}
+                        onRestock={handleRestock}
+                        activeDropdown={activeDropdown}
+                        setActiveDropdown={setActiveDropdown}
+                        dropdownPosition={dropdownPosition}
+                        handleViewStock={handleViewStock}
+                        setViewMode={setViewMode}
+                        setSelectedStock={setSelectedStock}
+                        setIsAddModalOpen={setIsAddModalOpen}
+                        handleArchive={handleArchive}
                       />
                     </td>
                   </tr>
@@ -454,86 +543,15 @@ const Inventory = () => {
         </table>
       </div>
 
-      {activeDropdown && (
-        <div
-          style={{
-            position: "fixed",
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-            zIndex: 50,
-          }}
-          className="w-36 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 action-dropdown"
-        >
-          <div className="py-1">
-            {activeDropdown.startsWith('main-') ? (
-              <>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setViewMode("view");
-                    setSelectedStock(inventoryData.find(item => item.stock_id === activeDropdown.replace('main-', '')));
-                    setIsAddModalOpen(true);
-                    setActiveDropdown(null);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  <Eye className="w-4 h-4 mr-2" strokeWidth={1.5} />
-                  <span>View</span>
-                </button>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setViewMode("edit");
-                    setSelectedStock(inventoryData.find(item => item.stock_id === activeDropdown.replace('main-', '')));
-                    setIsAddModalOpen(true);
-                    setActiveDropdown(null);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  <Edit2 className="w-4 h-4 mr-2" strokeWidth={1.5} />
-                  <span>Edit</span>
-                </button>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveDropdown(null);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  <RefreshCcw className="w-4 h-4 mr-2" strokeWidth={1.5} />
-                  <span>Restock</span>
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleArchive(activeDropdown.replace('main-', ''));
-                    setActiveDropdown(null);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                >
-                  <Archive className="w-4 h-4 mr-2" strokeWidth={1.5} />
-                  <span>Archive</span>
-                </button>
-              </>
-            ) : (
-              <>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       <AddStockModal
         isOpen={isAddModalOpen}
-        onClose={() => {
-          setIsAddModalOpen(false);
-          setViewMode("add");
-          setSelectedStock(null);
-        }}
-        onSubmit={handleSubmit} // Fixed here
-        mode={viewMode}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleSubmit}
+      />
+
+      <ViewStockModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
         stockData={selectedStock}
       />
     </div>
