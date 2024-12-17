@@ -469,7 +469,7 @@ const Inventory = () => {
                       </div>
                       
                     </td>
-                    <td className="py-2 text-sm text-gray-900">{stock.name}</td>
+                    <td className="py-2 text-sm text-gray-900">{stock.stock_name  }</td>
                     <td className="py-2 text-sm text-gray-900">
                      {currentStock
                      ? `${Math.floor(currentStock.remaining_quantity)} / ${Math.floor(currentStock.quantity)}`
@@ -547,6 +547,7 @@ const Inventory = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSubmit={handleSubmit}
+        stockData={selectedStock}
       />
 
       <ViewStockModal

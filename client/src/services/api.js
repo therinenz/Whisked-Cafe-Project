@@ -14,6 +14,21 @@ export const inventoryService = {
     return response.data;
   },
   
+  getNextStockNumber: async () => {
+    const stocks = await inventoryService.getAllStock();
+    let maxNumber = 0;
+    
+    stocks.forEach(stock => {
+      const match = stock.stock_id.match(/-(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1]);
+        maxNumber = Math.max(maxNumber, num);
+      }
+    });
+    
+    return maxNumber + 1;
+  },
+  
   getStockById: async (id) => {
     const response = await api.get(`/api/inventory/${id}`);
     return response.data;

@@ -5,14 +5,15 @@ import InputField from "./InputField";
 import { Plus, Eye } from "lucide-react";
 import Calendar from "./Calendar";
 import { inventoryService } from "../services/api";  
+import { toast } from 'react-hot-toast';
 
 
 const AddStockModal = ({ isOpen, onClose, onSubmit, mode = "add", stockData = null }) => {
   const [lastUsedNumber, setLastUsedNumber] = useState(0);
   const [formData, setFormData] = useState({
-    stockName: "",
+    stock_name: "",
     stockId: "",
-    category: "",
+    category_name: "",
     amountPerQty: 0,
     unit: "kg",
     quantity: 0,
@@ -28,6 +29,21 @@ const AddStockModal = ({ isOpen, onClose, onSubmit, mode = "add", stockData = nu
   const deliveryDateRef = useRef(null);
   const expirationDateRef = useRef(null);
 
+  const [nextNumber, setNextNumber] = useState(1);
+  
+  useEffect(() => {
+    const fetchNextNumber = async () => {
+      if (mode === "add") {
+        const next = await inventoryService.getNextStockNumber();
+        setNextNumber(next);
+      } 
+    };
+    
+    if (isOpen) {
+      fetchNextNumber();
+    }
+  }, [isOpen, mode]);
+  
   useEffect(() => {
     const handleClickOutside = (event) => {
       const isCalendarClick = event.target.closest(".calendar-dropdown");
@@ -49,23 +65,39 @@ const AddStockModal = ({ isOpen, onClose, onSubmit, mode = "add", stockData = nu
   
   useEffect(() => {
     if (isOpen) {
-      // Reset form when modal is opened
-      setFormData({
-        stockName: "",
-        stockId: "",
-        category: "",
-        amountPerQty: 0,
-        unit: "kg",
-        quantity: 0,
-        supplier: "",
-        deliveryDate: new Date().toISOString().split('T')[0],
-        expirationDate: "",
-      });
-  
-      // Increment lastUsedNumber to ensure unique stock ID
-      setLastUsedNumber((prev) => prev + 1);
+      if (mode === "view" && stockData) {
+        // Populate form with existing data when in view mode
+        setFormData({
+          stock_name: stockData.stock_name || "",
+          stockId: stockData.stock_id || "",
+          category_name: stockData.category_name || "",
+          amountPerQty: stockData.amount_per_qty || 0,
+          unit: stockData.unit || "kg",
+          quantity: stockData.quantity || 0,
+          supplier: stockData.supplier || "",
+          deliveryDate: stockData.delivery_date || new Date().toISOString().split('T')[0],
+          deliveryDateDisplay: stockData.delivery_date ? formatDate(new Date(stockData.delivery_date)) : "",
+          expirationDate: stockData.expiration_date || "",
+          expirationDateDisplay: stockData.expiration_date ? formatDate(new Date(stockData.expiration_date)) : "",
+        });
+      } else {
+        // Reset form for add mode
+        setFormData({
+          stock_name: "",
+          stockId: "",
+          category_name: "",
+          amountPerQty: 0,
+          unit: "kg",
+          quantity: 0,
+          supplier: "",
+          deliveryDate: new Date().toISOString().split('T')[0],
+          deliveryDateDisplay: "",
+          expirationDate: "",
+          expirationDateDisplay: "",
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, mode, stockData]);
   
   const toggleDeliveryCalendar = () => {
     const rect = deliveryDateRef.current.getBoundingClientRect();
@@ -88,11 +120,10 @@ const AddStockModal = ({ isOpen, onClose, onSubmit, mode = "add", stockData = nu
   };
 
   // Generate Stock ID based on stock name
-  const generateStockId = (name) => {
-    if (!name) return "";
-    const prefix = name.slice(0, 3).toUpperCase();
-    const nextNumber = (lastUsedNumber + 1).toString().padStart(3, '0');
-    return `${prefix}-${nextNumber}`;
+  const generateStockId = (stock_name) => {
+    if (!stock_name) return "";
+    const prefix = stock_name.slice(0, 3).toUpperCase();
+    return `${prefix}-${String(nextNumber).padStart(3, '0')}`;
   };
 
 const formatDate = (date) => {
@@ -111,7 +142,7 @@ const formatDate = (date) => {
     const newName = e.target.value;
     setFormData({
       ...formData,
-      stockName: newName,
+      stock_name: newName,
       stockId: generateStockId(newName)
     });
   };
@@ -144,8 +175,23 @@ const formatDate = (date) => {
   
     try {
       // Validate required fields
-      if (!formData.stockName || !formData.category || !formData.quantity || !formData.unit) {
-        alert("Please fill in all required fields");
+      if (!formData.stock_name || !formData.category_name || !formData.quantity || !formData.unit) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+
+      // Get the prefix (first 3 letters) of the new stock
+      const newStockPrefix = formData.stock_name.slice(0, 3).toUpperCase();
+
+      // Check if any stock exists with the same prefix
+      const allStocks = await inventoryService.getAllStock();
+      const stockPrefixExists = allStocks.some(stock => {
+        const existingPrefix = stock.stock_id.split('-')[0];
+        return existingPrefix === newStockPrefix;
+      });
+
+      if (stockPrefixExists) {
+        toast.error("A stock with this prefix already exists. Please use a different stock name.");
         return;
       }
 
@@ -156,37 +202,41 @@ const formatDate = (date) => {
         "Pastry": 3
       };
 
-      // Calculate total quantity based on unit per quantity
-      const totalQuantity = parseFloat(formData.quantity) * parseFloat(formData.amountPerQty);
+      // Ensure numbers are properly parsed
+      const quantity = parseFloat(formData.quantity) || 0;
+      const amountPerQty = parseFloat(formData.amountPerQty) || 0;
+      const totalQuantity = quantity * amountPerQty;
 
       const stockData = {
-        stock_id: generateStockId(formData.stockName),
-        stock_name: formData.stockName,
-        category_id: categoryMap[formData.category],
-        quantity: totalQuantity,          // Initial quantity
-        remaining_quantity: totalQuantity, // Same as initial quantity for new stock
+        stock_id: formData.stockId || generateStockId(formData.stock_name),
+        stock_name: formData.stock_name,
+        category_id: categoryMap[formData.category_name],
+        quantity: totalQuantity,
+        remaining_quantity: totalQuantity,
         unit: formData.unit,
         delivery_date: formData.deliveryDate,
-        expiration_date: formData.expirationDate,
-        threshold: 2, // Default threshold
-        supplier: formData.supplier,
-        status: 'Available' // New stock is always available initially
+        expiration_date: formData.expirationDate || null,
+        threshold: 2,
+        supplier: formData.supplier || null,
+        status: 'Available'
       };
 
       console.log("Sending data to backend:", stockData);
       const response = await inventoryService.addStock(stockData);
     
+      // Show success toast
+      toast.success("Stock added successfully!");
+
       // Refresh the inventory table
       if (onSubmit) {
-        onSubmit(); // This should trigger a refresh of the inventory data
+        onSubmit();
       }
 
-      alert("Stock added successfully!");
       onClose();
 
     } catch (error) {
       console.error("Error adding stock:", error);
-      alert(error.message || "Failed to add stock");
+      toast.error(error.message || "Failed to add stock");
     }
   };
   
@@ -212,24 +262,24 @@ const formatDate = (date) => {
       >
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-12 gap-4">
+
             {/* Stock Name and ID */}
             <div className="col-span-9">
-              <InputField
-                id="stockName"
-                name="stockName"
+               <InputField
+                id="stock_name"
                 label="Stock Name"
                 placeholder="Enter stock name"
-                value={formData.stockName}
-                onChange={(e) => setFormData({...formData, stockName: e.target.value})}
-                disabled={mode === "view"}
+                value={formData.stock_name}
+                onChange={handleStockNameChange}
               />
+
             </div>
             <div className="col-span-3">
               <InputField
                 id="stockId"
                 name="stockId"
                 label="Stock ID"
-                value={generateStockId(formData.stockName)}
+                value={generateStockId(formData.stock_name)}
                 disabled
                 className="bg-gray-100"
               />
@@ -238,23 +288,21 @@ const formatDate = (date) => {
             {/* Category, Unit, and Quantity */}
             <div className="col-span-4">
             <Dropdown
-  label="Category"
-  options={categories}
-  selectedValue={formData.category} // Pass the current value to display
-  onSelect={(value) => {
-    setFormData({ ...formData, category: value }); // Update state with selected value
-    console.log("Category Selected:", value); // Debugging to verify
-  }}
-  placeholder="Select category"
-/>
+             label="Category"
+            options={categories}
+            selectedValue={formData.category_name} // Pass the current value to display
+            onSelect={(value) => {
+              setFormData({ ...formData, category_name: value }); // Update state with selected value
+              console.log("Category Selected:", value); // Debugging to verify
+            }}
+            placeholder="Select category"
+          />
 
 
             </div>
             <div className="col-span-5 mt-1">
               <label className="block text-sm font-semibold text-gray-700 mb-1">Unit per Quantity</label>
-              
-              
-              
+                  
               <div className="flex">
   {/* Input Field for Amount */}
   <input
@@ -267,24 +315,21 @@ const formatDate = (date) => {
     className="w-1/3 px-3 py-2.5 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-primary"
   />
 
-  {/* Dropdown for Unit */}
-  <select
-    value={formData.unit} // State for unit
-    onChange={(e) =>
-      setFormData({ ...formData, unit: e.target.value })
-    }
-    className="w-3/4 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-1 focus:ring-primary"
-  >
-    {units.map((unit, index) => (
-      <option key={index} value={unit}>
-        {unit}
-      </option>
-    ))}
-  </select>
-</div>
-
-
-
+            {/* Dropdown for Unit */}
+            <select
+              value={formData.unit} // State for unit
+              onChange={(e) =>
+                setFormData({ ...formData, unit: e.target.value })
+              }
+              className="w-3/4 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              {units.map((unit, index) => (
+                <option key={index} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </select>
+          </div>
 
             </div>
             <div className="col-span-3 mt-1">

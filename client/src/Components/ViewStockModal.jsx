@@ -13,7 +13,7 @@ const ViewStockModal = ({ isOpen, onClose, stockData }) => {
       title={
         <>
           <Eye className="h-5 w-5 mr-2 text-primary" />
-          View Stock Details
+          View eh connected otids
         </>
       }
       className="w-[500px]"
@@ -25,7 +25,7 @@ const ViewStockModal = ({ isOpen, onClose, stockData }) => {
           <div className="col-span-9">
             <InputField
               label="Stock Name"
-              value={stockData.name}
+              value={stockData.stock_name}
               disabled
             />
           </div>
@@ -41,7 +41,7 @@ const ViewStockModal = ({ isOpen, onClose, stockData }) => {
           <div className="col-span-4">
             <InputField
               label="Category"
-              value={stockData.category}
+              value={stockData.category_name}
               disabled
             />
           </div>
